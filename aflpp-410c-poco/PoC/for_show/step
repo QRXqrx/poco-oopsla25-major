@@ -1,0 +1,10 @@
+CXX="$AFLPP/afl-c++"
+echo "CXX=$CXX"
+
+AFL_LLVM_INSTRUMENT=PoC $CXX -o test test.cpp -O0
+AFL_LLVM_INSTRUMENT=PoC $CXX -S -emit-llvm test.cpp -o test.ll -O0
+AFL_LLVM_INSTRUMENT=PoC $CXX -c -emit-llvm test.cpp -o test.bc -O0
+
+../res/tog_analyse.sh ./test.bc 
+
+python3 ../tools/poff_run.py -i ./seeds/ -o ./result/ 
