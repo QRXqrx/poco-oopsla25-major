@@ -24,6 +24,14 @@ This repository contains the current version of the artifact. The artifact inclu
 
 > How to install PoCo on your own machine.
 
+### 2.1 Prerequisites
+- **Operating System**: Ubuntu 22.04 LTS (or compatible Linux distribution)
+- **CPU: x86_64 architecture, recommended 4 cores or more
+- **Memory**: Minimum 16 GB RAM
+- Disk Space: At least 32 GB of free space
+- Python: 3.10 or higher
+
+
 ## 3 Quick Start
 
 > How to run PoCo on an example project, or, just on hello.
