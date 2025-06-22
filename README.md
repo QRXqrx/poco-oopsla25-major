@@ -206,7 +206,7 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
     opt-15 --version  # Ubuntu LLVM version 15.0.7
     ls /workdir/aflpp-410c-poco/PoC/res/build/libtog_analysis.so
     ```
-2. Extract toggle/guard hierarchy from bitcode file. Make sure you set `AFLPP=/workdir/aflpp-410c-poco` because it is used in the `tog_analysis.sh`. Depending the size of the target, this step can take few minutes, so you can go and get a coffee :coffee:. Users who use the `poco` container can directly access the results by `ls /workdir/tog_analysis_edge`.
+2. Extract toggle/guard hierarchy from bitcode file. Make sure you have set `AFLPP=/workdir/aflpp-410c-poco` because it is used in the `tog_analysis.sh`. Depending the size of the target, this step can take few minutes, so you can go and get a coffee :coffee:. Users who use the `poco` container can directly access the results by `ls /workdir/tog_analysis_edge`.
     ```shell
     cd /workdir/out
     export AFLPP=/workdir/aflpp-410c-poco
