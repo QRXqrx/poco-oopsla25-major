@@ -7,7 +7,7 @@ This repository contains the current version of PoCo's artifact. The artifact in
 - All there names are come from the metaphor: *Peeling off the Cocoon*.
 - All three names are used interchangeably across the artifact and all refer to the proposed technique. 
 
-## 1 Current Assets
+## 1 Artifact Details
 
 - `aflpp-410c-poco`: PoCo prototype built on top of AFL++ (version 4.10c). Key components are as follows:
   - `instrumentation/SanitizerCoveragePoC.so.cc`: LLVM pass implementing PoCo instrumentation.
@@ -22,7 +22,7 @@ This repository contains the current version of PoCo's artifact. The artifact in
 
 ## 2 Prerequisites
 - **Operating System**: Ubuntu 22.04 LTS (or compatible Linux distribution)
-- **CPU**: x86_64 architecture, recommended 4 cores or more
+- **CPU**: x86_64 architecture, recommended 16 cores or more
 - **Memory**: Minimum 16 GB RAM
 - **Disk Space**: At least 32 GB of free space
 - **Python**: 3.10 or higher
@@ -225,15 +225,15 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
     Process completed
     ```
 
-### 3.5 PoCo Iterative Seed Selection
+### 3.5 Select Seed Iteratively
 
-1. This step corresponds to the *Iterative Seed Selection* (ISS) algorithm described in our manuscript. With all the intermedia produces prepared, we can now run PoCo ISS using `poff_run.py`. Make sure you have the environ `AFLPP` set before running the script.
+1. This step corresponds to the *Iterative Seed Selection* (ISS) algorithm described in our manuscript. With all the intermedia produces prepared, we can now run PoCo ISS using `poff_run.py`. Please make sure you have the environ `AFLPP` set before running `poff_run.py`, or it will be unable to find `afl-cmin`.
     ```shell
     export AFLPP=/workdir/aflpp-410c-poco
     cd /workdir/out
     mkdir ./poco-raw  # For ISS output
     python3 $AFLPP/PoC/tools/poff_run.py \
-      -i ../corpus/xmllint \
+      -i ../data/corpus/xmllint \
       -o ./poco-raw \
       -g ./tog_analysis_edge \
       -e ./xmllint_poc \
@@ -245,6 +245,7 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
     - `-g`: The toggle/guard hierarchy.
     - `-e`: PoCo-instrumented target binary.
     - `-T`: Time budget for PoCo ISS in seconds. E.g., `-T 300` means that PoCo will keep on running for 300s (5 minutes). 
+    - `-- @@`: An AFL-style target command line passing.
     
 3. Verity `poff_run.py`. Logs like below indicate that `poff_run.py` is started correctly:
     ```text
@@ -269,6 +270,65 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
     2025-06-22_17-40-57_cmin_xmllint_poc_1
     2025-06-22_17-41-02_cmin_xmllint_poc_2
     ...
+    ```
+4. The final step is to pack the seeds in all rounds of seed selection into one. Since the run of PoCo can last for few hours, we papre read-to-use `xmllint` PoCo raw seeds under [xmllint-poco-raw](./data/xmllint-poco-raw). Users can verify the packing of PoCo seeds as follows:
+    ```shell
+    cd /workdir/out/
+    mkdir ./poco-xmllint  # Make sure you create the output dir first.
+    python3 /workdir/scripts/cp_poco_seeds.py \
+      /workdir/data/xmllint-poco-raw/ ./poco-xmllint/
+    ``` 
+    The script `cp_poco_seeds.py` will gather seeds selected in all rounds of PoCo, deduplicate, and copies them to a given directory (i.e., `poco-xmllint/` here). The packing succeeded if you saw logs similar to the ones below:
+    ```text
+    ...
+    [LOG] Cp from `/workdir/data/xmllint-poco-raw/2025-05-01_21-32-35_cmin_xmllint_poc_32/any6_0.xml` to `/workdir/out/poco-xmllint/any6_0.xml`
+    [LOG] Cp from `/workdir/data/xmllint-poco-raw/2025-05-01_21-32-35_cmin_xmllint_poc_32/restriction-enum-1_0.xml` to `/workdir/out/poco-xmllint/restriction-enum-1_0.xml`
+    [LOG] ============================
+    [LOG] Find 378 for target xmllint-poco-raw
+    [LOG] Finish all :-)
+    [LOG] ============================
+    ```
+
+### 3.6 Fuzzing with PoCo seeds on Magma
+
+In our submission, we leverage targets from Magma to evaluate how PoCo seeds perform in fuzzing. [Magma](https://github.com/HexHive/magma) is a fault-based fuzzing evaluation benchmark implemented based on Docker. Therefore, it is not possible to run Magma experiments within a docker container.
+
+1. If you are using `poco` container, move PoCo seeds out to your host machine first:
+    ```shell
+    cd /workdir/  # On the host machine
+    docker cp poco:/workdir/out/poco-xmllint .
+    ```
+2. Pull the source code of Magma 
+    ```shell
+    git clone https://github.com/HexHive/magma.git
+    ```
+3. Duplicate a `libxml2`; replace the corpus of `xmllint` with PoCo seeds.
+    ```shell
+    cd ./magma/targets
+    cp -r ./libxml2 ./libxml2_poco
+    rm -rf ./libxml2_poco/corpus/xmllint
+    cp -r /workdir/poco-xmllint ./libxml2_poco/corpus/xmllint
+    ```
+4. Magma uses `captainrc` to configure the experiments. Modify `magma/tools/captain/captainrc` to get ready for fuzzing. We have prepared configured one under `data/` ([captainrc-xmllint](./data/captainrc-xmllint)). You can just replace the Magma original one with this:
+    ```shell
+    cd /workdir/magma/tools/captain
+    mv captainrc captainrc.orig
+    cp /workdir/data/captainrc-xmllint ./captainrc
+    ```
+5. Install Docker and create a non-root user within the `docker` group, which is an implicit requirement of Magma. 
+    ```shell
+    apt update
+    apt install -y docker.io
+    docker --version  # Verify
+    adduser poco      # Create a non-root user named 'poco'
+    usermod -aG docker poco
+    ```
+6. Give the user `poco` permission to `/workdir`; switch to the user `poco` and [run](https://github.com/HexHive/magma/blob/v1.2/tools/captain/run.sh) Magma experiments.
+    ```shell
+    chown -R poco /workdir
+    su poco
+    cd /workdir/magma/tools/captain
+    ./run.sh    # Provided by Magma
     ```
 
 ## 4 Planned Improvements
