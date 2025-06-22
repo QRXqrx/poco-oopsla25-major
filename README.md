@@ -47,7 +47,7 @@ This repository contains the current version of PoCo's artifact. The artifact in
 
 We use `xmllint`, one of the targets used in our paper, to exemplify our experimental process. Note that we assume that you are running a root user on Ubuntu:22.04 in this section.
 
-**Note**: Since the installation of enviroments (such as LLVM and gclang) can be tricky, we also provided a **Docker image** with all environments done, which can be downloaded through: 
+**Note**: Since the installation of enviroments (such as LLVM and gclang) can be tricky, we **highly recommend** users to use our anonymous Docker image `xxx`, which is with all environments done. The image can be downloaded and run through: 
 ```shell
 docker pull xxx
 docker run -it --name 'poco'
@@ -57,7 +57,7 @@ You can jump to section 3.2 using this Docker container `poco`.
 
 ### 3.1 Preparing Environments
 
-1. **Install essential tools**. Install essential tools and dependencies, such as `make`, `cmake`, and `python3` using the `apt-get` command.
+1. **Install essential dependencies**. Install essential tools and dependencies, such as `make`, `cmake`, and `python3` using the `apt-get` command.
     ```shell
     sudo apt-get update
     sudo apt-get install -y build-essential \
@@ -122,9 +122,22 @@ You can jump to section 3.2 using this Docker container `poco`.
     Thread model: posix
     InstalledDir: /usr/lib/llvm-15/bin
     ```
-4. > Build tog analysis component.
+4. We also need to build the toggle/guard hierachy extraction component of PoCo, which is implemented using C++.
+    ```shell
+    cd ./PoC/res  # Before cd, we are under /workdir/aflpp-410c-poco
+    mkdir ./build
+    cmake -B ./build .  # Generate Makefile using cmake
+    cd ./build
+    make
+    ```
+    You successfully built the toggle/guard hierachy extraction component if you saw the logs like below; you can also check its existence by `ls ./libtog_analysis.so`: 
+    ```text
+    [ 50%] Building CXX object CMakeFiles/tog_analysis.dir/tog_analysis.cc.o
+    [100%] Linking CXX shared module libtog_analysis.so
+    [100%] Built target tog_analysis
+    ```
 
-### 3.3 Build `xmllint` 
+### 3.3 Build `xmllint_poc` 
 1. Go back to the `workdir` and download the source code of `libxml2`, which is the project of `xmllint`. We use the [Magma](https://github.com/HexHive/magma) version of `libxml2` both in our experiments and for this demonstration, check here: [Magma-libxml2](https://github.com/HexHive/magma/blob/v1.2/targets/libxml2/fetch.sh). 
 You can also do `cd /workdir/libxml2` within the `poco` container.
     ```shell
@@ -185,6 +198,78 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
     00000000004ef610 T __poc_auto_early
     0000000000850430 B __poc_map_addr
     ```    
+
+### 3.4 Construct toggle/guard hierarchy
+
+1. This step correponds to the *Guard Hierarchy Analysis* algorithm described in our manuscript. This step relies on `opt-15`, the IR-level optimization tool provided by LLVM (see [llvm-tutor](https://github.com/banach-space/llvm-tutor)), and our toggle extract component named `libtog_analysis.so`. Make sure you have `opt-15` installed and the `libtog_analysis.so` correctly installed:
+    ```shell
+    opt-15 --version  # Ubuntu LLVM version 15.0.7
+    ls /workdir/aflpp-410c-poco/PoC/res/build/libtog_analysis.so
+    ```
+2. Extract toggle/guard hierarchy from bitcode file. Make sure you set `AFLPP=/workdir/aflpp-410c-poco` because it is used in the `tog_analysis.sh`. Depending the size of the target, this step can take few minutes, so you can go and get a coffee :coffee:. Users who use the `poco` container can directly access the results by `ls /workdir/tog_analysis_edge`.
+    ```shell
+    cd /workdir/out
+    export AFLPP=/workdir/aflpp-410c-poco
+    bash $AFLPP/PoC/res/tog_analysis.sh # Output to ./tog_analysis_edge
+    # or you may want to output to other directory
+    TOG_ANALYSIS_PATH=<dir-to-output> bash $AFLPP/PoC/res/tog_analysis.sh
+    ```
+    The extraction succeeded if you see logs below; you can also check the existence by `ls ./tog_analysis_edge`:
+    ```text
+    BASENAME=xmllint.bc
+    BC_FILE=xmllint.bc
+    PASS_SO=/workdir/aflpp-410c-poco/PoC/res/build/libtog_analysis.so
+    Instrumenting IR file...
+    opt-15 -load-pass-plugin /workdir/aflpp-410c-poco/PoC/res/build/libtog_analysis.so --passes=tog-analysis -disable-output xmllint.bc 
+    the result is written to /workdir/out/tog_analysis_edge
+    Process completed
+    ```
+
+### 3.5 PoCo Iterative Seed Selection
+
+1. This step corresponds to the *Iterative Seed Selection* (ISS) algorithm described in our manuscript. With all the intermedia produces prepared, we can now run PoCo ISS using `poff_run.py`. Make sure you have the environ `AFLPP` set before running the script.
+    ```shell
+    export AFLPP=/workdir/aflpp-410c-poco
+    cd /workdir/out
+    mkdir ./poco-raw  # For ISS output
+    python3 $AFLPP/PoC/tools/poff_run.py \
+      -i ../corpus/xmllint \
+      -o ./poco-raw \
+      -g ./tog_analysis_edge \
+      -e ./xmllint_poc \
+      -T 300 -- @@ 
+    ```
+2. A breakdown of `poff_run.py` commands:
+    - `-i`: The seed universe/corpus to be minized.  
+    - `-o`: The directory to output raw PoCo outputs.
+    - `-g`: The toggle/guard hierarchy.
+    - `-e`: PoCo-instrumented target binary.
+    - `-T`: Time budget for PoCo ISS in seconds. E.g., `-T 300` means that PoCo will keep on running for 300s (5 minutes). 
+    
+3. Verity `poff_run.py`. Logs like below indicate that `poff_run.py` is started correctly:
+    ```text
+    ['@@']
+    [LOG] the max time limit is set to 5.0
+    [LOG] we are parsing dot file from /workdir/out/tog_analysis_edge
+    [LOG] Execute testcases...
+    [LOG] poff will be stop forced in 2025-06-22 19:40:57.017538
+    [LOG] /workdir/aflpp-410c-poco
+    [LOG] round : 1
+    [LOG] run : /workdir/aflpp-410c-poco/afl-cmin -i /workdir/corpus/xmllint -o /workdir/out/poco-raw/2025-06-22_17-40-57_cmin_xmllint_poc_1 -T 1 -t 5000 -- /workdir/out/xmllint_poc @@
+    ...
+    [LOG] +++++++++++++++++++++++++++++++++++++++++++++++ 
+    [LOG] now we have 3236 tog
+    [LOG] next round we will use /workdir/corpus/xmllint as seed and /workdir/out/poco-raw/2025-06-22_17-41-02_cmin_xmllint_poc_2 as cmin output
+    [LOG] round : 2
+    [LOG] run : /workdir/aflpp-410c-poco/afl-cmin -i /workdir/corpus/xmllint -o /workdir/out/poco-raw/2025-06-22_17-41-02_cmin_xmllint_poc_2 -T 1 -t 5000 -- /workdir/out/xmllint_poc @@
+    [LOG] +++++++++++++++ Program Outputs +++++++++++++++ 
+    ```  
+    You can also check the results of ISS after `poff_run.py` finished using `ls -l poco-raw/`:
+    ```text
+    2025-06-22_17-40-57_cmin_xmllint_poc_1
+    2025-06-22_17-41-02_cmin_xmllint_poc_2
+    ...
+    ```
 
 ## 4 Planned Improvements
 
