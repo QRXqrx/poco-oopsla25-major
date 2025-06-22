@@ -1,6 +1,12 @@
 # Artifacts of PoCo (OOPSLA'25)
 
-This repository contains the current version of PoCo's artifact. The artifact includes (1) all source code of the PoCo prototype, (2) intermediate and final data of PoCo experiments, and (3) key scripts for conducting experiments and data analyses.
+OOPSLA'2425 Submission: *Peeling off the Cocoon: Unveiling Suppressed Golden Seeds for Mutational Greybox Fuzzing*
+
+PoCo is a technique that aims at enhancing modern coverage-based seed selection (CSS) techniques, such as `afl-cmin`, by gradually removing obstacle conditional statements and conducting deeper seed selection. 
+
+This repository/package contains the current version of PoCo's artifact. The artifact includes (1) all source code of the PoCo prototype, (2) intermediate and final data of PoCo experiments, and (3) key scripts for conducting experiments and data analyses. All artifacts and updates can be found at the [anonymous repository](https://anonymous.4open.science/r/poco-oopsla25-major-FB39).
+
+Note that our submission is under a Major revision and some of the artifacts are still under constructions :construction:.
 
 **P.S. The Name Changing History**
 - PoC -> Poff -> PoCo
@@ -14,13 +20,15 @@ This repository contains the current version of PoCo's artifact. The artifact in
   - `src/afl-cc.c`: A modfied AFL++ compiler wrapper supporting `SanitizerCoveragePoC.so`. 
   - `PoC/res`: Utilities for running guard/toggle hierarchy construction and analysis.
   - `PoC/tools`: Utilities for running iteratice seed selection.
-- `data`: Raw and processed experimental data.
-  - `poco-binaries`: Experimental target binaries instrumented by PoCo.
-  - `tog-dots`: Extracted guard/toggle hierarchy represented as DOT files.
-  - `results`: Sheets and figures presented in the paper.
+- `data`: Raw and intermedia experimental data.
+  - `poco-binaries`: An example Magma configuration.
+  - `corpus/xmllint`: The universe seed corpus for `xmllint`.
+  - `poco-xmllint-done`: Packed PoCo seeds for `xmllint`.
+  - `xmllint-poco-raw`: Raw PoCo seeds for `xmllint`.
 - `scripts`: Key data processing scripts.
+  - `cp_poco_seeds.py`: On-click script for packing raw PoCo seeds into one folder. 
 
-## 2 Prerequisites
+## 2 Hardware and Software Dependencies
 - **Operating System**: Ubuntu 22.04 LTS (or compatible Linux distribution)
 - **CPU**: x86_64 architecture, recommended 16 cores or more
 - **Memory**: Minimum 16 GB RAM
@@ -43,9 +51,9 @@ This repository contains the current version of PoCo's artifact. The artifact in
   - Docker (>= 24.0.7), required for runnig Magma, and recommended for building PoC-instrumented targets.
 
 
-## 3 Step-by-Step Instructions
+## 3 Getting Started Guide
 
-We use `xmllint`, one of the targets used in our paper, to exemplify our experimental process. Note that we assume that you are running a root user on Ubuntu:22.04 in this section.
+We use `xmllint`, one of the targets used in our paper, to exemplify how to get raw experimental data. We assume that you are running a root user on Ubuntu:22.04 operating system in this section.
 
 **Note**: Since the installation of enviroments (such as LLVM and gclang) can be tricky, we **highly recommend** users to use our anonymous Docker image `xxx`, which is with all environments done. The image can be downloaded and run through: 
 ```shell
@@ -87,10 +95,10 @@ You can jump to section 3.2 using this Docker container `poco`.
     cd /workdir
     mkdir ./out # To store built products.
     ``` 
-2. Copy and untar our artifacts into `workdir`. Assuming that our artifact is named `poco-artifact.tar.gz` and is put under the `/` folder.
+2. Copy and untar our artifacts into `workdir`. Assuming that our artifact is named `poco-artifact.zip` and is put under the `/` folder.
     ```shell
-    mv /poco-artifact.tar.gz .
-    untar -xzf ./poco-artifact.tar.gz
+    mv /poco-artifact.zip .
+    unzip ./poco-artifact.zip
     ```
 3. Enter the `aflpp-410c-poco` folder and build PoCo implemation (which is build on top of [AFL++](https://github.com/AFLplusplus/AFLplusplus) version 4.10) using `clang` as the compiler and set `LLVM_CONFIG=llvm-config-15`. You can directly switch to `/workdir/aflpp-410c-poco` using the `poco` container.
     ```shell
@@ -172,7 +180,8 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
 4. Create PoCo-instrumented (also with AFL++ instrumentation) `xmllint` using the bitcode file and `aflpp-410c-poco/afl-cc` as the compiler. 
     ```shell
     cd ../out
-    AFL_LLVM_INSTRUMENT=poc ../aflpp-410c-poco/afl-cc -lz -llzma -lm ./xmllint.bc -o xmllint_poc
+    AFL_LLVM_INSTRUMENT=poc ../aflpp-410c-poco/afl-cc \
+        -lz -llzma -lm ./xmllint.bc -o xmllint_poc
     ```
     Build success if you see logs like follows:
     ```text
@@ -210,9 +219,9 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
     ```shell
     cd /workdir/out
     export AFLPP=/workdir/aflpp-410c-poco
-    bash $AFLPP/PoC/res/tog_analysis.sh # Output to ./tog_analysis_edge
+    bash $AFLPP/PoC/res/tog_analysis.sh ./xmllint.bc # Output to ./tog_analysis_edge
     # or you may want to output to other directory
-    TOG_ANALYSIS_PATH=<dir-to-output> bash $AFLPP/PoC/res/tog_analysis.sh
+    TOG_ANALYSIS_PATH=<dir-to-output> bash $AFLPP/PoC/res/tog_analysis.sh ./xmllint.bc
     ```
     The extraction succeeded if you see logs below; you can also check the existence by `ls ./tog_analysis_edge`:
     ```text
@@ -331,8 +340,61 @@ In our submission, we leverage targets from Magma to evaluate how PoCo seeds per
     ./run.sh    # Provided by Magma
     ```
 
-## 4 Planned Improvements
+## 4 Step by Step Instructions
 
-- We will provide a full Docker image with pre-installed dependencies.
-- We will include one-click scripts to reproduce all results.
-- Additional experimental configurations and data visualizations will be added.
+Our submission is under a major revision and many experiments have not finished yet. In the final version of the artifact, we will include all the PoCo instrumented target binaries, all the PoCo raw seed selection results, all the raw fuzz data, and demonstrate how data analyses are conducted on these raw data. Please keep an eye on our [anonymous repository](https://anonymous.4open.science/r/poco-oopsla25-major-FB39). 
+
+## 5 Reusability Guide
+
+In our artifact, the **core resuable components** are the PoCo toolchain, which consist of:
+- **Instrumentation component**: `SanitizerCoveragePoC.so` and the modified `afl-cc` (see Section 3.2#Step-1..3 and Section 3.3);
+- **Toggle/Guard hierarchy extraction component**: `libtog_analysis.so` and `tog_analysis.sh` under `PoC/res/` (see Section 3.2#Step-4 and Section 3.4); 
+- **Iterative seed selection component**: `poff_run.sh` under `PoC/run/` (see Section 3.5)
+
+Given the source code `<project-to-project>` of a project to be fuzzed and a corpus `<path-to-corpus>` of seed files, PoCo can generally be reused with the following steps: 
+
+1. Build the project using gllvm:
+    ```shell
+    export CC=gclang CXX=gclang++
+    cd <project-to-project>
+    build # autogen, make, cmake...
+    ```
+2. Extract the bitcode file of the fuzz target:
+    ```shell
+    get-bc <path-to-target>
+    mv target.bc /workdir/out
+    ```
+3. Conduct PoCo instrumentation:
+    ```shell
+    cd /workdir/out
+    <path-to-poco>/afl-cc ./target.bc <link options> -o ./target_poc
+    ```
+4. Extract toggle/guard hierarchy:
+    ```shell
+    export AFLPP=<path-to-poco>
+    cd /workdir/out
+    bash $AFLPP/PoC/res/tog_analysis.sh ./target.bc # Output to ./tog_analysis_edge
+    ```
+5. Run iterative seed selection and gather the resultant seeds:
+    ```shell
+    cd /workdir/out
+    mkdir ./poco-raw ./poco-seeds
+    export AFLPP=<path-to-poco>
+    python3 $AFLPP/PoC/tools/poff_run.py \
+      -i <path-to-corpus> \
+      -o ./poco-raw \
+      -g ./tog_analysis_edge \
+      -e ./target_poc \
+      -T 7200 -- <other-target-args> @@
+    ```
+    
+
+
+## 6 Planned Improvements
+
+Our submission is under a Major Revision and has much room to improve. Here is our plan:
+
+- Include data analyses and experiment helper scripts.
+- Add all experimental configurations and data visualizations.
+- Provide a fork of Magma that contains our experimental setups.
+- Archive the PoCo instrumented targets, the raw fuzz data (e.g., `xmllint_poc`), the extracted toggle/guard hierarchies, and all experimental seed corpora; provide the link to the archive.
