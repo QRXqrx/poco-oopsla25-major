@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC -g -shared  -o build/libtog_analysis.so CMakeFiles/tog_analysis.dir/tog_analysis.cc.o  -Wl,-rpath,/usr/lib/llvm-15/lib /usr/lib/llvm-15/lib/libLLVM-15.so 
