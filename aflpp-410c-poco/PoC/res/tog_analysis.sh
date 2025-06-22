@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# 将tog_analysis.so应用于指定文件，输出dot
+# Input: Bitcode file.
+# Output: Toggle hierarchy in dot file.
 
 # Parameter checks
 if [ $# -ne 1 ]; then
