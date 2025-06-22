@@ -1,0 +1,36 @@
+###
+## Configuration parameters
+###
+
+# REPEAT: number of campaigns to run per program (per fuzzer)
+# REPEAT=10
+
+# [WORKERS]: number of worker threads (default: CPU cores)
+# WORKERS=20
+
+
+# [TIMEOUT]: time to run each campaign. This variable supports one-letter
+# suffixes to indicate duration (s: seconds, m: minutes, h: hours, d: days)
+# (default: 1m)
+# TIMEOUT=24h
+# TIMEOUT=48h
+
+# [POLL]: time (in seconds) between polls (default: 5)
+POLL=5
+
+# [ISAN]: if set, build the benchmark with ISAN/fatal canaries (default: unset)
+ISAN=1
+
+# Formal experiments
+TIMEOUT=24h
+REPEAT=10
+WORKERS=10
+
+###
+## Campaigns to run
+###
+
+WORKDIR="/workdir/magma-fuzzdata"
+FUZZERS=(aflplusplus)
+aflplusplus_TARGETS=(libxml2_poco)
+aflplusplus_libxml2_poco_PROGRAMS=(xmllint)
