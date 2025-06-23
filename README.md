@@ -26,7 +26,7 @@ Note that our submission is under a Major revision and some of the artifacts are
   - `poco-xmllint-done`: Packed PoCo seeds for `xmllint`.
   - `xmllint-poco-raw`: Raw PoCo seeds for `xmllint`.
 - `scripts`: Key data processing scripts.
-  - `cp_poco_seeds.py`: On-click script for packing raw PoCo seeds into one folder. 
+  - `cp_poco_seeds.py`: The script for packing raw PoCo seeds into one folder. 
 
 ## 2 Hardware and Software Dependencies
 - **Operating System**: Ubuntu 22.04 LTS (or compatible Linux distribution)
@@ -55,10 +55,10 @@ Note that our submission is under a Major revision and some of the artifacts are
 
 We use `xmllint`, one of the targets used in our paper, to exemplify how to get raw experimental data. We assume that you are running a root user on Ubuntu:22.04 operating system in this section.
 
-**Note**: Since the installation of enviroments (such as LLVM and gclang) can be tricky, we **highly recommend** users to use our anonymous Docker image `xxx`, which is with all environments done. The image can be downloaded and run through: 
+**Note**: Since the installation of enviroments (such as LLVM and gclang) can be tricky, we **highly recommend** users to use our anonymous Docker image `anon0poco/major:latest`, which is with all environments done. The image can be downloaded and run through: 
 ```shell
-docker pull xxx
-docker run -it --name 'poco'
+docker pull anon0poco/major:latest
+docker run -it --name 'poco' anon0poco/major:latest
 ```
 
 You can jump to section 3.2 using this Docker container `poco`. 
@@ -93,7 +93,6 @@ You can jump to section 3.2 using this Docker container `poco`.
     ```shell
     mkdir /workdir
     cd /workdir
-    mkdir ./out # To store built products.
     ``` 
 2. Copy and untar our artifacts into `workdir`. Assuming that our artifact is named `poco-artifact.zip` and is put under the `/` folder.
     ```shell
@@ -146,9 +145,11 @@ You can jump to section 3.2 using this Docker container `poco`.
     ```
 
 ### 3.3 Build `xmllint_poc` 
-1. Go back to the `workdir` and download the source code of `libxml2`, which is the project of `xmllint`. We use the [Magma](https://github.com/HexHive/magma) version of `libxml2` both in our experiments and for this demonstration, check here: [Magma-libxml2](https://github.com/HexHive/magma/blob/v1.2/targets/libxml2/fetch.sh). 
-You can also do `cd /workdir/libxml2` within the `poco` container.
+1. Go back to the `workdir` and download the source code of `libxml2`, which is the project of `xmllint`. We use the [Magma](https://github.com/HexHive/magma) version of `libxml2` both in our experiments and for this demonstration, check here: [Magma-libxml2](https://github.com/HexHive/magma/blob/v1.2/targets/libxml2/fetch.sh). You can just do `cd /workdir/libxml2` within the `poco` container.
     ```shell
+    cd /workdir
+    mkdir ./out # To store built products.
+    # cd /workdir/libxml2 # If you are using the poco container.
     git clone --no-checkout https://gitlab.gnome.org/GNOME/libxml2.git
     git -C ./libxml2 checkout ec6e3efb06d7b15cf5a2328fabd3845acea4c815
     ```
@@ -156,22 +157,24 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
     ```shell
     cd ./libxml2
     make clean # Clear outdated builds.
+    export PATH=~/go/bin:$PATH
     CC=gclang CXX=gclang++ ./autogen.sh --disable-shared 
     make xmllint
     ```
     If you see logs like following, then it means the `autogen.sh` works well:
     ```text
     Done configuring
+
     Now type 'make' to compile libxml2.
     ``` 
-    You list `xmllint` to see whether it is there:
+    You can list `xmllint` to see whether it is there:
     ```shell
     ls xmllint
     ```
 3. Extract [bitcode](https://llvm.org/docs/BitCodeFormat.html) file from `xmllint` and move it to `/workdir/out`:
-    ```
+    ```shell
     get-bc xmllint
-    mv xmllint.bc ../out
+    mv xmllint.bc ../out/
     ```
     The bitcode extraction succeeds is you see logs below:
     ```text
@@ -215,13 +218,17 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
     opt-15 --version  # Ubuntu LLVM version 15.0.7
     ls /workdir/aflpp-410c-poco/PoC/res/build/libtog_analysis.so
     ```
-2. Extract toggle/guard hierarchy from bitcode file. Make sure you have set `AFLPP=/workdir/aflpp-410c-poco` because it is used in the `tog_analysis.sh`. Depending the size of the target, this step can take few minutes, so you can go and get a coffee :coffee:. Users who use the `poco` container can directly access the results by `ls /workdir/tog_analysis_edge`.
+2. Extract toggle/guard hierarchy from bitcode file. Make sure you have set `AFLPP=/workdir/aflpp-410c-poco` because it is used in the `tog_analysis.sh`. Depending the size of the target, this step can take few minutes, so you can go and get a coffee :coffee:.
     ```shell
     cd /workdir/out
     export AFLPP=/workdir/aflpp-410c-poco
-    bash $AFLPP/PoC/res/tog_analysis.sh ./xmllint.bc # Output to ./tog_analysis_edge
+    AFL_LLVM_INSTRUMENT=poc $AFLPP/afl-cc \
+        -lz -llzma -lm \
+        -emit-llvm -c ./xmllint.bc \
+        -o xmllint_poc.bc
+    bash $AFLPP/PoC/res/tog_analysis.sh ./xmllint_poc.bc # Output to ./tog_analysis_edge
     # or you may want to output to other directory
-    TOG_ANALYSIS_PATH=<dir-to-output> bash $AFLPP/PoC/res/tog_analysis.sh ./xmllint.bc
+    #TOG_ANALYSIS_PATH=<dir-to-output> bash $AFLPP/PoC/res/tog_analysis.sh ./xmllint_poc.bc
     ```
     The extraction succeeded if you see logs below; you can also check the existence by `ls ./tog_analysis_edge`:
     ```text
@@ -236,7 +243,7 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
 
 ### 3.5 Select Seed Iteratively
 
-1. This step corresponds to the *Iterative Seed Selection* (ISS) algorithm described in our manuscript. With all the intermedia produces prepared, we can now run PoCo ISS using `poff_run.py`. Please make sure you have the environ `AFLPP` set before running `poff_run.py`, or it will be unable to find `afl-cmin`.
+1. This step corresponds to the *Iterative Seed Selection* (ISS) algorithm described in our manuscript. With all the intermedia produces prepared, we can now run PoCo ISS using `poff_run.py`. Please make sure you have the environ `AFLPP` set before running `poff_run.py`, or it will be unable to find `afl-cmin`. Note that this command is just for demonstration and will take hours to finish. To save time, users can just terminate it with Ctrl-C and jump to step-4.
     ```shell
     export AFLPP=/workdir/aflpp-410c-poco
     cd /workdir/out
@@ -246,16 +253,15 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
       -o ./poco-raw \
       -g ./tog_analysis_edge \
       -e ./xmllint_poc \
-      -T 300 -- @@ 
+      -T 7200 -- @@ 
     ```
 2. A breakdown of `poff_run.py` commands:
     - `-i`: The seed universe/corpus to be minized.  
     - `-o`: The directory to output raw PoCo outputs.
     - `-g`: The toggle/guard hierarchy.
     - `-e`: PoCo-instrumented target binary.
-    - `-T`: Time budget for PoCo ISS in seconds. E.g., `-T 300` means that PoCo will keep on running for 300s (5 minutes). 
+    - `-T`: Time budget for PoCo ISS in seconds. E.g., `-T 7200` means that PoCo will keep on running for 7200s (2 hours). 
     - `-- @@`: An AFL-style target command line passing.
-    
 3. Verity `poff_run.py`. Logs like below indicate that `poff_run.py` is started correctly:
     ```text
     ['@@']
@@ -280,7 +286,7 @@ You can also do `cd /workdir/libxml2` within the `poco` container.
     2025-06-22_17-41-02_cmin_xmllint_poc_2
     ...
     ```
-4. The final step is to pack the seeds in all rounds of seed selection into one. Since the run of PoCo can last for few hours, we papre read-to-use `xmllint` PoCo raw seeds under [xmllint-poco-raw](./data/xmllint-poco-raw). Users can verify the packing of PoCo seeds as follows:
+4. The final step is to pack the seeds in all rounds of seed selection into one. Since the run of PoCo can last for few hours in real experiments, we papre read-to-use `xmllint` PoCo raw seeds under [data/xmllint-poco-raw](./data/xmllint-poco-raw). Users can verify the packing of PoCo seeds as follows:
     ```shell
     cd /workdir/out/
     mkdir ./poco-xmllint  # Make sure you create the output dir first.
@@ -340,9 +346,9 @@ In our submission, we leverage targets from Magma to evaluate how PoCo seeds per
     ./run.sh    # Provided by Magma
     ```
 
-## 4 Step by Step Instructions
+## 4 Step-by-Step Instructions
 
-Our submission is under a major revision and many experiments have not finished yet. In the final version of the artifact, we will include all the PoCo instrumented target binaries, all the PoCo raw seed selection results, all the raw fuzz data, and demonstrate how data analyses are conducted on these raw data. Please keep an eye on our [anonymous repository](https://anonymous.4open.science/r/poco-oopsla25-major-FB39). 
+Section 3 has exemplified almost all the steps of reproducing our experiments. Our submission is now under a major revision and many experiments have not finished yet. In the final version of the artifact, we will present more details and include more artifacts, such as the PoCo instrumented target binaries, the PoCo raw seed selection results, and the raw fuzz data. We will also demonstrate how data analyses are conducted on these raw data. Please keep an eye on our [anonymous repository](https://anonymous.4open.science/r/poco-oopsla25-major-FB39). 
 
 ## 5 Reusability Guide
 
@@ -373,7 +379,10 @@ Given the source code `<project-to-project>` of a project to be fuzzed and a cor
     ```shell
     export AFLPP=<path-to-poco>
     cd /workdir/out
-    bash $AFLPP/PoC/res/tog_analysis.sh ./target.bc # Output to ./tog_analysis_edge
+    AFL_LLVM_INSTRUMENT=poc $AFLPP/afl-cc \
+        -emit-llvm -c ./target.bc \
+        -o target_poc.bc
+    bash $AFLPP/PoC/res/tog_analysis.sh ./target_poc.bc # Output to ./tog_analysis_edge
     ```
 5. Run iterative seed selection and gather the resultant seeds:
     ```shell
@@ -387,14 +396,13 @@ Given the source code `<project-to-project>` of a project to be fuzzed and a cor
       -e ./target_poc \
       -T 7200 -- <other-target-args> @@
     ```
-    
-
 
 ## 6 Planned Improvements
 
 Our submission is under a Major Revision and has much room to improve. Here is our plan:
 
+- Further improve the documentations and tidy up the codes.
 - Include data analyses and experiment helper scripts.
 - Add all experimental configurations and data visualizations.
 - Provide a fork of Magma that contains our experimental setups.
-- Archive the PoCo instrumented targets, the raw fuzz data (e.g., `xmllint_poc`), the extracted toggle/guard hierarchies, and all experimental seed corpora; provide the link to the archive.
+- Archive the PoCo instrumented targets, the raw fuzz data (e.g., `xmllint_poc`), the extracted toggle/guard hierarchies, and all experimental seed corpora through Zenodo or figureshare; provide the link to the archive.
