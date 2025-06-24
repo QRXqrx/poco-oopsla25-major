@@ -94,13 +94,14 @@ You can jump to section 3.2 using this Docker container `poco`.
     mkdir /workdir
     cd /workdir
     ``` 
-2. Copy and untar our artifacts into `workdir`. Assuming that our artifact is named `poco-artifact.zip` and is put under the `/` folder.
+2. Copy and unzip our artifacts into `workdir`. Assuming that our artifact is named `poco-artifact.zip` and is put under the `/` folder. Skip this step if you in the `poco` container.
     ```shell
     mv /poco-artifact.zip .
     unzip ./poco-artifact.zip
     ```
 3. Enter the `aflpp-410c-poco` folder and build PoCo implemation (which is build on top of [AFL++](https://github.com/AFLplusplus/AFLplusplus) version 4.10) using `clang` as the compiler and set `LLVM_CONFIG=llvm-config-15`. You can directly switch to `/workdir/aflpp-410c-poco` using the `poco` container.
     ```shell
+    cd ./aflpp-410c-poco
     make clean
     CC=clang CXX=clang++ LLVM_CONFIG=llvm-config-15 make
     ``` 
@@ -145,11 +146,10 @@ You can jump to section 3.2 using this Docker container `poco`.
     ```
 
 ### 3.3 Build `xmllint_poc` 
-1. Go back to the `workdir` and download the source code of `libxml2`, which is the project of `xmllint`. We use the [Magma](https://github.com/HexHive/magma) version of `libxml2` both in our experiments and for this demonstration, check here: [Magma-libxml2](https://github.com/HexHive/magma/blob/v1.2/targets/libxml2/fetch.sh). You can just do `cd /workdir/libxml2` within the `poco` container.
+1. Go back to the `workdir` and download the source code of `libxml2`, which is the project of `xmllint`. We use the [Magma](https://github.com/HexHive/magma) version of `libxml2` both in our experiments and for this demonstration, check here: [Magma-libxml2](https://github.com/HexHive/magma/blob/v1.2/targets/libxml2/fetch.sh). After creating `out`, you can just do `cd /workdir/libxml2` and jump to the next step if you are in `poco` container.
     ```shell
     cd /workdir
     mkdir ./out # To store built products.
-    # cd /workdir/libxml2 # If you are using the poco container.
     git clone --no-checkout https://gitlab.gnome.org/GNOME/libxml2.git
     git -C ./libxml2 checkout ec6e3efb06d7b15cf5a2328fabd3845acea4c815
     ```
@@ -186,7 +186,7 @@ You can jump to section 3.2 using this Docker container `poco`.
     AFL_LLVM_INSTRUMENT=poc ../aflpp-410c-poco/afl-cc \
         -lz -llzma -lm ./xmllint.bc -o xmllint_poc
     ```
-    Build success if you see logs like follows:
+    Build success if you see logs like follows (you may need to wait few more seconds after seeing these logs):
     ```text
     ...
     [PoC] Inject function: xmlListReverseWalk
@@ -227,7 +227,7 @@ You can jump to section 3.2 using this Docker container `poco`.
         -emit-llvm -c ./xmllint.bc \
         -o xmllint_poc.bc
     bash $AFLPP/PoC/res/tog_analysis.sh ./xmllint_poc.bc # Output to ./tog_analysis_edge
-    # or you may want to output to other directory
+    # or you may want to output to another directory
     #TOG_ANALYSIS_PATH=<dir-to-output> bash $AFLPP/PoC/res/tog_analysis.sh ./xmllint_poc.bc
     ```
     The extraction succeeded if you see logs below; you can also check the existence by `ls ./tog_analysis_edge`:
@@ -237,13 +237,15 @@ You can jump to section 3.2 using this Docker container `poco`.
     PASS_SO=/workdir/aflpp-410c-poco/PoC/res/build/libtog_analysis.so
     Instrumenting IR file...
     opt-15 -load-pass-plugin /workdir/aflpp-410c-poco/PoC/res/build/libtog_analysis.so --passes=tog-analysis -disable-output xmllint.bc 
+    ...
     the result is written to /workdir/out/tog_analysis_edge
     Process completed
     ```
 
 ### 3.5 Select Seed Iteratively
 
-1. This step corresponds to the *Iterative Seed Selection* (ISS) algorithm described in our manuscript. With all the intermedia produces prepared, we can now run PoCo ISS using `poff_run.py`. Please make sure you have the environ `AFLPP` set before running `poff_run.py`, or it will be unable to find `afl-cmin`. Note that this command is just for demonstration and will take hours to finish. To save time, users can just terminate it with Ctrl-C and jump to step-4.
+1. This step corresponds to the *Iterative Seed Selection* (ISS) algorithm described in our manuscript. With all the intermedia produces prepared, we can now run PoCo ISS using `poff_run.py`. Please make sure you have the environ `AFLPP` set before running `poff_run.py`, or it will be unable to find `afl-cmin`. 
+**Note that** this command is just for demonstration and will take hours to finish. To save time, users can just terminate it with Ctrl-C and **jump to step-4**.
     ```shell
     export AFLPP=/workdir/aflpp-410c-poco
     cd /workdir/out
@@ -280,7 +282,7 @@ You can jump to section 3.2 using this Docker container `poco`.
     [LOG] run : /workdir/aflpp-410c-poco/afl-cmin -i /workdir/corpus/xmllint -o /workdir/out/poco-raw/2025-06-22_17-41-02_cmin_xmllint_poc_2 -T 1 -t 5000 -- /workdir/out/xmllint_poc @@
     [LOG] +++++++++++++++ Program Outputs +++++++++++++++ 
     ```  
-    You can also check the results of ISS after `poff_run.py` finished using `ls -l poco-raw/`:
+    You can also check the results of ISS if `poff_run.py` has already finished few rounds of seed selection through `ls -l poco-raw/` (or check our finished example by `ls -l /workdir/data/xmllint-poco-raw`):
     ```text
     2025-06-22_17-40-57_cmin_xmllint_poc_1
     2025-06-22_17-41-02_cmin_xmllint_poc_2
@@ -337,6 +339,7 @@ In our submission, we leverage targets from Magma to evaluate how PoCo seeds per
     docker --version  # Verify
     adduser poco      # Create a non-root user named 'poco'
     usermod -aG docker poco
+    usermod -aG sudo poco
     ```
 6. Give the user `poco` permission to `/workdir`; switch to the user `poco` and [run](https://github.com/HexHive/magma/blob/v1.2/tools/captain/run.sh) Magma experiments.
     ```shell
