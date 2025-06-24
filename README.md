@@ -4,7 +4,7 @@ OOPSLA'2425 Submission: *Peeling off the Cocoon: Unveiling Suppressed Golden See
 
 PoCo is a technique that aims at enhancing modern coverage-based seed selection (CSS) techniques, such as `afl-cmin`, by gradually removing obstacle conditional statements and conducting deeper seed selection. 
 
-This repository/package contains the current version of PoCo's artifact. The artifact includes (1) all source code of the PoCo prototype, (2) intermediate and final data of PoCo experiments, and (3) key scripts for conducting experiments and data analyses. All artifacts and updates can be found at the [anonymous repository](https://anonymous.4open.science/r/poco-oopsla25-major-FB39).
+This repository/package contains the current version of PoCo's artifact. The artifact includes (1) the source code of the PoCo prototype, (2) part of the intermediate and final data of PoCo experiments, and (3) some key scripts for conducting experiments and data analyses. All artifacts and updates can be found at this [anonymous repository](https://anonymous.4open.science/r/poco-oopsla25-major-FB39).
 
 Note that our submission is under a Major revision and some of the artifacts are still under constructions :construction:.
 
@@ -19,9 +19,9 @@ Note that our submission is under a Major revision and some of the artifacts are
   - `instrumentation/SanitizerCoveragePoC.so.cc`: LLVM pass implementing PoCo instrumentation.
   - `src/afl-cc.c`: A modfied AFL++ compiler wrapper supporting `SanitizerCoveragePoC.so`. 
   - `PoC/res`: Utilities for running guard/toggle hierarchy construction and analysis.
-  - `PoC/tools`: Utilities for running iteratice seed selection.
+  - `PoC/tools`: Utilities for running iterative seed selection.
 - `data`: Raw and intermedia experimental data.
-  - `poco-binaries`: An example Magma configuration.
+  - `captainrc-xmllint`: An example Magma configuration on the target `xmllint`.
   - `corpus/xmllint`: The universe seed corpus for `xmllint`.
   - `poco-xmllint-done`: Packed PoCo seeds for `xmllint`.
   - `xmllint-poco-raw`: Raw PoCo seeds for `xmllint`.
@@ -47,13 +47,13 @@ Note that our submission is under a Major revision and some of the artifacts are
   - Git (>= 2.34.1)
   - make (>= 4.3) and cmake (>= 3.22.1)
   - LLVM & Clang (== 15.0.7), required for running PoCo instrumentation. You can find LLVM 15.0.7 here: [lvmorg-15.0.7](https://github.com/llvm/llvm-project/releases/tag/llvmorg-15.0.7).
-  - Go (==1.18.1), required for downloading gclang/gclang++. You can find and download gclang/gclang++ here: [gllvm](https://github.com/SRI-CSL/gllvm).
+  - Go (>=1.18.1), required for downloading gllvm toolchain, including `gclang/gclang++`, and `get-bc`. You can find and download gllvm toolchain here: [gllvm-repo](https://github.com/SRI-CSL/gllvm).
   - Docker (>= 24.0.7), required for runnig Magma, and recommended for building PoC-instrumented targets.
 
 
 ## 3 Getting Started Guide
 
-We use `xmllint`, one of the targets used in our paper, to exemplify how to get raw experimental data. We assume that you are running a root user on Ubuntu:22.04 operating system in this section.
+We use `xmllint`, one of the targets used in our paper, to exemplify how to get raw experimental data. We will assume that you are running a root user on Ubuntu:22.04 operating system in this section.
 
 **Note**: Since the installation of enviroments (such as LLVM and gclang) can be tricky, we **highly recommend** users to use our anonymous Docker image `anon0poco/major:latest`, which is with all environments done. The image can be downloaded and run through: 
 ```shell
@@ -73,7 +73,7 @@ You can jump to section 3.2 using this Docker container `poco`.
         make cmake python3 python3-dev ...
     ```
 2. **Install LLVM and Clang v15.0.7**. We recommend users to build LLVM from source. You can find the LLVM 15.0.7 release at [lvmorg-15.0.7](https://github.com/llvm/llvm-project/releases/tag/llvmorg-15.0.7) and install from source referring to the LLVM official [guildline](https://llvm.org/docs/GettingStarted.html#getting-the-source-code-and-building-llvm).
-3. **Install gllvm**. The project [gllvm](https://github.com/SRI-CSL/gllvm) provided convinient whole program LLVM, which can ease the experiments of PoCo. They supply simple installation using `go`. Make sure you got `go` before installing and adding gllvm executables, such as `gclang` and `get-bc`, to `$PATH` after the installation. Exemplified commands are as follows:
+3. **Install gllvm**. The project [gllvm](https://github.com/SRI-CSL/gllvm) provided convinient whole program LLVM, which can ease the experiments of PoCo. They supply simple installation using `go`. Make sure you got `go` before installing and adding the gllvm toolchain, such as `gclang` and `get-bc`, to `$PATH` after the installation. Exemplified commands are as follows:
     ```shell
     go install github.com/SRI-CSL/gllvm/cmd/...@latest
     ls ~/go/bin  # Verify your installation.
@@ -82,14 +82,14 @@ You can jump to section 3.2 using this Docker container `poco`.
     ```
     If you see outputs like follows then it means you have gllvm installed:
     ```text
-    clang version 15.0.7  # your clang version, better be 15.0.7
+    clang version 15.0.7  # gclang shows your clang version, better be 15.0.7
     Target: x86_64-unknown-linux-gnu
     Thread model: posix
     InstalledDir: /usr/local/bin
     ``` 
 
 ### 3.2 Build PoCo 
-1. Make a directory `workdir` to work with. You can simply switch to it using `cd /workdir` if you are using our Docker image.
+1. Make a directory `workdir` to work with. You can simply switch to it using `cd /workdir` if you are using the supplied `poco` container (instantiated from the `anon0poco/major:latest` Docker image).
     ```shell
     mkdir /workdir
     cd /workdir
@@ -115,11 +115,11 @@ You can jump to section 3.2 using this Docker container `poco`.
     [+] LLVM-PoC successfully built   # Yeah! The PoCo instrumentation seems gonna to work!
     [-] gcc_mode could not be built, it is optional, install gcc-VERSION-plugin-dev to enable this
     ```
-    You can also the instruction below to double check:
+    You can also use the instruction below to double check:
     ```shell
     AFL_LLVM_INSTRUMENT=poc ./afl-cc --version
     ```
-    If you see outputs as follows, then it means `afl-cc` is using `clang` as the backend, and our PoCo instrumentation looks working:
+    If you see outputs as follows, then it means `afl-cc` is using `clang` as the backend, and our PoCo instrumentation is working:
     ```text
     [PoC] Seems the PCGUARD-PoC instrumentation is on, yeah!
     afl-cc++4.10c by Michal Zalewski, Laszlo Szekeres, Marc Heuse - mode: LLVM-
@@ -146,7 +146,7 @@ You can jump to section 3.2 using this Docker container `poco`.
     ```
 
 ### 3.3 Build `xmllint_poc` 
-1. Go back to the `workdir` and download the source code of `libxml2`, which is the project of `xmllint`. We use the [Magma](https://github.com/HexHive/magma) version of `libxml2` both in our experiments and for this demonstration, check here: [Magma-libxml2](https://github.com/HexHive/magma/blob/v1.2/targets/libxml2/fetch.sh). After creating `out`, you can just do `cd /workdir/libxml2` and jump to the next step if you are in `poco` container.
+1. Go back to the `workdir` and download the source code of `libxml2`, which is the project of `xmllint`. We use the [Magma](https://github.com/HexHive/magma) version of `libxml2` both in our experiments and for this demonstration ([Magma-libxml2](https://github.com/HexHive/magma/blob/v1.2/targets/libxml2/fetch.sh)). After creating `out`, you can just do `cd /workdir/libxml2` and jump to the next step if you are in `poco` container.
     ```shell
     cd /workdir
     mkdir ./out # To store built products.
@@ -213,12 +213,12 @@ You can jump to section 3.2 using this Docker container `poco`.
 
 ### 3.4 Construct toggle/guard hierarchy
 
-1. This step correponds to the *Guard Hierarchy Analysis* algorithm described in our manuscript. This step relies on `opt-15`, the IR-level optimization tool provided by LLVM (see [llvm-tutor](https://github.com/banach-space/llvm-tutor)), and our toggle extract component named `libtog_analysis.so`. Make sure you have `opt-15` installed and the `libtog_analysis.so` correctly installed:
+1. This step correponds to the *Guard Hierarchy Analysis* algorithm described in our manuscript. This step relies on `opt-15`, the IR-level optimization tool provided by LLVM (see [llvm-tutor](https://github.com/banach-space/llvm-tutor)), and our toggle extract component named `libtog_analysis.so`. First, make sure you have `opt-15` installed and the `libtog_analysis.so` correctly installed by:
     ```shell
     opt-15 --version  # Ubuntu LLVM version 15.0.7
     ls /workdir/aflpp-410c-poco/PoC/res/build/libtog_analysis.so
     ```
-2. Extract toggle/guard hierarchy from bitcode file. Make sure you have set `AFLPP=/workdir/aflpp-410c-poco` because it is used in the `tog_analysis.sh`. Depending the size of the target, this step can take few minutes, so you can go and get a coffee :coffee:.
+2. Extract toggle/guard hierarchy from bitcode file. Make sure you have set `AFLPP=/workdir/aflpp-410c-poco` because it is used in the `tog_analysis.sh`. Depending the size of the target, this step can take few minutes; you can go and get a cup of coffee :coffee:.
     ```shell
     cd /workdir/out
     export AFLPP=/workdir/aflpp-410c-poco
@@ -326,7 +326,7 @@ In our submission, we leverage targets from Magma to evaluate how PoCo seeds per
     rm -rf ./libxml2_poco/corpus/xmllint
     cp -r /workdir/poco-xmllint ./libxml2_poco/corpus/xmllint
     ```
-4. Magma uses `captainrc` to configure the experiments. Modify `magma/tools/captain/captainrc` to get ready for fuzzing. We have prepared configured one under `data/` ([captainrc-xmllint](./data/captainrc-xmllint)). You can just replace the Magma original one with this:
+4. Magma uses `captainrc` to configure the experiments. Modify `magma/tools/captain/captainrc` to get ready for fuzzing. We have prepared a configured one under `data/` ([captainrc-xmllint](./data/captainrc-xmllint)). You can just replace the Magma original one with this:
     ```shell
     cd /workdir/magma/tools/captain
     mv captainrc captainrc.orig
@@ -351,7 +351,7 @@ In our submission, we leverage targets from Magma to evaluate how PoCo seeds per
 
 ## 4 Step-by-Step Instructions
 
-Section 3 has exemplified almost all the steps of reproducing our experiments. Our submission is now under a major revision and many experiments have not finished yet. In the final version of the artifact, we will present more details and include more artifacts, such as the PoCo instrumented target binaries, the PoCo raw seed selection results, and the raw fuzz data. We will also demonstrate how data analyses are conducted on these raw data. Please keep an eye on our [anonymous repository](https://anonymous.4open.science/r/poco-oopsla25-major-FB39). 
+Section 3 has exemplified almost all the steps of reproducing our experiments. Our submission is now under a major revision and part of the experiments have not finished yet. In the final version of the artifact, we will present more details and include more artifacts, such as the PoCo instrumented target binaries, the PoCo raw seed selection results, and the raw fuzz data. We will also demonstrate how data analyses are conducted on these raw data. Please keep an eye on our [anonymous repository](https://anonymous.4open.science/r/poco-oopsla25-major-FB39). 
 
 ## 5 Reusability Guide
 
@@ -398,6 +398,7 @@ Given the source code `<project-to-project>` of a project to be fuzzed and a cor
       -g ./tog_analysis_edge \
       -e ./target_poc \
       -T 7200 -- <other-target-args> @@
+    python3 ./scripts/cp_poco_seeds.py ./poco-raw ./poco-seeds
     ```
 
 ## 6 Planned Improvements
