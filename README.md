@@ -153,7 +153,7 @@ You can jump to section 3.2 using this Docker container `poco`.
     git clone --no-checkout https://gitlab.gnome.org/GNOME/libxml2.git
     git -C ./libxml2 checkout ec6e3efb06d7b15cf5a2328fabd3845acea4c815
     ```
-2. Enter the `libxml2` source folder. Build it using `gclang` as the compiler. Make sure you have `gllvm` binaries in your `PATH`.
+2. Enter the `libxml2` source folder. Build it using `gclang` as the compiler. Make sure you have gllvm toolchain in your `PATH`.
     ```shell
     cd ./libxml2
     make clean # Clear outdated builds.
