@@ -245,7 +245,7 @@ You can jump to section 3.2 using this Docker container `poco`.
 ### 3.5 Select Seed Iteratively
 
 1. This step corresponds to the *Iterative Seed Selection* (ISS) algorithm described in our manuscript. With all the intermedia produces prepared, we can now run PoCo ISS using `poff_run.py`. Please make sure you have the environ `AFLPP` set before running `poff_run.py`, or it will be unable to find `afl-cmin`. 
-**Note that** this command is just for demonstration and will take hours to finish. To save time, users can just terminate it with Ctrl-C and **jump to step-4**.
+**Note that** this command is just for demonstration and will take hours to finish. To save time, users can just terminate it with Ctrl-C and **jump to Section 3.5#step-4**.
     ```shell
     export AFLPP=/workdir/aflpp-410c-poco
     cd /workdir/out
