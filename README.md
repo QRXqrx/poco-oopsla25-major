@@ -400,6 +400,7 @@ Given the source code `<project-to-project>` of a project to be fuzzed and a cor
       -T 7200 -- <other-target-args> @@
     python3 ./scripts/cp_poco_seeds.py ./poco-raw ./poco-seeds
     ```
+6. Finally, design and start fuzz campagins using PoCo seeds.
 
 ## 6 Planned Improvements
 
