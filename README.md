@@ -406,7 +406,8 @@ In our submission, we leverage targets from Magma to evaluate how PoCo seeds per
    ```shell
    cd /workdir/magma/tools/captain
    mv captainrc captainrc.orig
-   cp /workdir/data/captainrc-xmllint ./captainrc
+   #cp /workdir/data/captainrc-xmllint ./captainrc
+   docker cp poco:/workdir/data/captainrc-xmllint ./captainrc
    ```
 
 5. Install Docker and create a non-root user within the `docker` group, which is an implicit requirement of Magma. 
