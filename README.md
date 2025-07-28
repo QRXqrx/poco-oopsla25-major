@@ -24,7 +24,7 @@ Note that our submission is under a Major revision, and some of the artifacts ar
 - `data`: Raw and intermediate experimental data.
   - `captainrc-xmllint`: An example Magma configuration on the target `xmllint`.
   - `corpus/xmllint`: The universe seed corpus for `xmllint`.
-  - `fuzz-results`: Final fuzzing results.
+  - `results`: PoCo and final fuzzing results.
   - `poco-xmllint-done`: Packed PoCo seeds for `xmllint`.
   - `xmllint-poco-raw`: Raw PoCo seeds for `xmllint`.
 - `magma-poco`: A fork of Magma integrating PoCo experiements.  
