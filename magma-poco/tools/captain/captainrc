@@ -2,17 +2,17 @@
 ## Configuration parameters
 ###
 
-# REPEAT: number of campaigns to run per program (per fuzzer)
-# REPEAT=10
+# [REPEAT]: number of campaigns to run per program (per fuzzer)
+REPEAT=10
 
 # [WORKERS]: number of worker threads (default: CPU cores)
-# WORKERS=20
-
+# WORKERS=25
 
 # [TIMEOUT]: time to run each campaign. This variable supports one-letter
 # suffixes to indicate duration (s: seconds, m: minutes, h: hours, d: days)
 # (default: 1m)
-# TIMEOUT=24h
+TIMEOUT=24h
+# TIMEOUT=26h
 
 # [POLL]: time (in seconds) between polls (default: 5)
 POLL=5
@@ -20,22 +20,10 @@ POLL=5
 # [ISAN]: if set, build the benchmark with ISAN/fatal canaries (default: unset)
 ISAN=1
 
-# For test
-# TIMEOUT=1m
-# REPEAT=1
-
-# Formal experiments
-# TIMEOUT=24h
-# TIMEOUT=26h
-# REPEAT=10
-
-# WORKERS=25
-
 ###
 ## Campaigns to run
 ###
 
-# 20250707
-WORKDIR="/home/fyx/ase25-fuzzdata/20250707-major-poco-cminplus-2h5d-7targets-24hours-6more"
+WORKDIR="/poco-fuzzdata"
 FUZZERS=(aflplusplus)
-aflplusplus_TARGETS=(lua_poco_cminplus sqlite3_poco_cminplus libtiff_poco_cminplus libxml2_poco_cminplus libpng_poco_cminplus lua_poco_cminplus_2h sqlite3_poco_cminplus_2h libtiff_poco_cminplus_2h libxml2_poco_cminplus_2h libpng_poco_cminplus_2h lua_poco_poco sqlite3_poco_poco libtiff_poco_poco libxml2_poco_poco libpng_poco_poco lua_poco_poco_2h sqlite3_poco_poco_2h libtiff_poco_poco_2h libxml2_poco_poco_2h libpng_poco_poco_2h)
+aflplusplus_TARGETS=(libpng_poco_all libpng_poco_cmin libpng_poco_cminplus libpng_poco_cminplus_2h libpng_poco_optimin libpng_poco_poco libpng_poco_poco_2h libsndfile_poco_all libsndfile_poco_cmin libsndfile_poco_cminplus libsndfile_poco_cminplus_2h libsndfile_poco_optimin libsndfile_poco_poco libsndfile_poco_poco_2h libtiff_poco_all libtiff_poco_cmin libtiff_poco_cminplus libtiff_poco_cminplus_2h libtiff_poco_optimin libtiff_poco_poco libtiff_poco_poco_2h libxml2_poco_all libxml2_poco_cmin libxml2_poco_cminplus libxml2_poco_cminplus_2h libxml2_poco_optimin libxml2_poco_poco lua_poco_all lua_poco_cmin lua_poco_cminplus lua_poco_cminplus_2h lua_poco_optimin lua_poco_poco lua_poco_poco_2h sqlite3_poco_all sqlite3_poco_cmin sqlite3_poco_cminplus sqlite3_poco_cminplus_2h sqlite3_poco_optimin sqlite3_poco_poco sqlite3_poco_poco_2h)
