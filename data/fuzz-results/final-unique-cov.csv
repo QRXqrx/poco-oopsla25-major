@@ -1,0 +1,9 @@
+,target,cmin,cminplus_2h,poco_2h,cmin,cminplus,poco
+0,sndfile_fuzzer,28,11,52,13,24,54
+1,xmllint,22,30,43,18,31,51
+2,libxml2_xml_read_memory_fuzzer,24,53,55,44,52,54
+3,sqlite3_fuzz,159,137,215,159,137,215
+4,lua,24,21,33,59,22,90
+5,libpng_read_fuzzer,4,10,3,3,4,6
+6,tiffcp,79,57,136,70,40,59
+7,tiff_read_rgba_fuzzer,29,53,92,23,79,51

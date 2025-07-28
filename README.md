@@ -24,8 +24,10 @@ Note that our submission is under a Major revision, and some of the artifacts ar
 - `data`: Raw and intermediate experimental data.
   - `captainrc-xmllint`: An example Magma configuration on the target `xmllint`.
   - `corpus/xmllint`: The universe seed corpus for `xmllint`.
+  - `fuzz-results`: Final fuzzing results.
   - `poco-xmllint-done`: Packed PoCo seeds for `xmllint`.
   - `xmllint-poco-raw`: Raw PoCo seeds for `xmllint`.
+- `magma-poco`: A fork of Magma integrating PoCo experiements.  
 - `scripts`: Key data processing scripts.
   - `cp_poco_seeds.py`: The script for packing raw PoCo seeds into one folder. 
 
@@ -432,7 +434,27 @@ In our submission, we leverage targets from Magma to evaluate how PoCo seeds per
 
 ## 4 Step-by-Step Instructions
 
-Section 3 has exemplified almost all the steps of reproducing our experiments. Our submission is now under a major revision, and part of the experiments have not finished yet. In the final version of the artifact, we will present more details and include more artifacts, such as the PoCo instrumented target binaries, the PoCo raw seed selection results, and the raw fuzz data. We will also demonstrate how data analyses are conducted on these raw data. Please keep an eye on our [anonymous repository](https://anonymous.4open.science/r/poco-oopsla25-major-FB39). 
+To ease reproducation, we provided a Magma fork that integrates all PoCo experimental setups (`magma-poco`), including all seed sets and a kick-to-fire experimental configuration file. Specifically, the seed sets are under `magma-poco/targets`, and their the suffixs correpond to the studied techniques (ALL, OptiMin, Cmin, Cmin+, PoCo). You can start the whole fuzzing process according to the following steps:
+
+1. Install Docker and create a non-root user within the `docker` group, which is an implicit requirement of Magma (same with the step-5 of Section 3.6). 
+
+   ```shell
+   apt update
+   apt install -y docker.io
+   docker --version  # Verify
+   adduser poco      # Create a non-root user named 'poco'
+   usermod -aG docker poco
+   usermod -aG sudo poco
+   ```
+
+2. Suppose we are under the root folder of the directory of this artifact. Switch to the folder that puts the `captainrc` experimental configuration, start the experiments using Magma `run.sh`. Note that we configured to output the results to `/home/poco/poco-fuzzdata`. Please remember to modify the configuration if you use different another non-root user.
+
+   ```shell
+   cd magma-poco/tools/captain
+   ./run.sh
+   ```
+3. By default, the experimental scripts will occupy all cores to run fuzzing. Now you can let the experiments to run several ours to finish.
+
 
 ## 5 Reusability Guide
 

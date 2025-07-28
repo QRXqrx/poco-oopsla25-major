@@ -1,0 +1,9 @@
+,target,edges_delta_ave,edges_26h_ave,a12_delta,a12_26h
+0,sndfile_fuzzer,2967.2,2970.5,0.74 \tiny{(0.03)},0.71 \tiny{(0.06)}
+1,xmllint,8005.6,8014.2,0.68 \tiny{(0.10)},0.56 \tiny{(0.34)}
+2,libxml2_xml_read_memory_fuzzer,8749.3,8757.0,0.54 \tiny{(0.40)},0.47 \tiny{(0.59)}
+3,sqlite3_fuzz,12828.1,12834.2,0.35 \tiny{(0.88)},0.35 \tiny{(0.88)}
+4,lua,4916.6,4925.6,0.48 \tiny{(0.56)},0.46 \tiny{(0.63)}
+5,libpng_read_fuzzer,1463.6,1463.8,0.38 \tiny{(0.84)},0.38 \tiny{(0.84)}
+6,tiffcp,4237.7,4254.2,0.66 \tiny{(0.12)},0.59 \tiny{(0.26)}
+7,tiff_read_rgba_fuzzer,3862.5,3862.5,0.54 \tiny{(0.41)},0.54 \tiny{(0.41)}
