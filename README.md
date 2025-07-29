@@ -99,7 +99,7 @@ To facilitate reproduction, we provided a Magma fork (`magma-poco`) that integra
    cd magma-poco/tools/captain
    ./run.sh
    ```
-5. By default, the experimental scripts utilize all CPU cores for fuzzing. You can now let the experiments run for several hours to complete.
+5. By default, the experimental scripts utilize all CPU cores for fuzzing. You can now let the experiments run for several hours to complete. If you want to obtain quick results, you can modify `magma-poco/tools/captain` by setting `TIMEOUT` as `1m`.
 
 
 ## 4 Step-by-Step Instructions
