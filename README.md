@@ -434,7 +434,7 @@ In our submission, we leverage targets from Magma to evaluate how PoCo seeds per
 
 ## 4 Step-by-Step Instructions
 
-To ease reproducation, we provided a Magma fork that integrates all PoCo experimental setups (`magma-poco`), including all seed sets and a kick-to-fire experimental configuration file. Specifically, the seed sets are under `magma-poco/targets`, and their the suffixs correpond to the studied techniques (ALL, OptiMin, Cmin, Cmin+, PoCo). You can start the whole fuzzing process according to the following steps:
+To facilitate reproduction, we provided a Magma fork (`magma-poco`) that integrates all PoCo experimental setups, including all seed sets and a kick-to-fire experimental configuration file. Specifically, the seed sets are located under magma-poco/targets, and their suffixes correspond to the studied techniques: ALL, OptiMin, Cmin, Cmin+, and PoCo. You can start the whole fuzzing process according to the following steps:
 
 1. Install Docker and create a non-root user within the `docker` group, which is an implicit requirement of Magma (same with the step-5 of Section 3.6). 
 
@@ -447,13 +447,13 @@ To ease reproducation, we provided a Magma fork that integrates all PoCo experim
    usermod -aG sudo poco
    ```
 
-2. Suppose we are under the root folder of the directory of this artifact. Switch to the folder that puts the `captainrc` experimental configuration, start the experiments using Magma `run.sh`. Note that we configured to output the results to `/home/poco/poco-fuzzdata`. Please remember to modify the configuration if you use different another non-root user.
+2. Suppose you are in the root directory of this artifact. Navigate to the folder containing the captainrc experimental configuration and start the experiments using Magma's run.sh script. The results will be written to /home/poco/poco-fuzzdata by default. If you are using a different non-root user, please remember to modify the configuration accordingly.
 
    ```shell
    cd magma-poco/tools/captain
    ./run.sh
    ```
-3. By default, the experimental scripts will occupy all cores to run fuzzing. Now you can let the experiments to run several ours to finish.
+3. By default, the experimental scripts utilize all CPU cores for fuzzing. You can now let the experiments run for several hours to complete.
 
 
 ## 5 Reusability Guide
