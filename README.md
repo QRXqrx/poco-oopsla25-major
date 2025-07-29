@@ -77,13 +77,29 @@ To facilitate reproduction, we provided a Magma fork (`magma-poco`) that integra
    usermod -aG sudo poco
    ```
 
-2. Suppose you are in the root directory of this artifact. Navigate to the folder containing the captainrc experimental configuration and start the experiments using Magma's run.sh script. The results will be written to /home/poco/poco-fuzzdata by default. If you are using a different non-root user, please remember to modify the configuration accordingly.
+2. Suppose you are in the root directory of this artifact. Copy `magma-poco` to the home directory of the newly created user `poco` Change the owner of the copied one into `poco`.
+   
+   ```shell
+   cp -r ./magma-poco /home/poco
+   cd /home/poco
+   chown -R poco:poco ./magma-poco
+   ```
+3. As required by AFL++, we need to do some setting before running it.
 
    ```shell
+   echo core | sudo tee /proc/sys/kernel/core_pattern
+   echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+   ```
+
+
+4. Switch to the user `poco`. Navigate to the folder containing the captainrc experimental configuration and start the experiments using Magma's run.sh script. The results will be written to /home/poco/poco-fuzzdata by default. If you are using a different non-root user, please remember to modify the configuration accordingly.
+
+   ```shell
+   su poco
    cd magma-poco/tools/captain
    ./run.sh
    ```
-3. By default, the experimental scripts utilize all CPU cores for fuzzing. You can now let the experiments run for several hours to complete.
+5. By default, the experimental scripts utilize all CPU cores for fuzzing. You can now let the experiments run for several hours to complete.
 
 
 ## 4 Step-by-Step Instructions
@@ -446,7 +462,14 @@ In our submission, we leverage targets from Magma to evaluate how PoCo seeds per
    usermod -aG sudo poco
    ```
 
-6. Give the user `poco` permission to `/workdir`; switch to the user `poco` and [run](https://github.com/HexHive/magma/blob/v1.2/tools/captain/run.sh) Magma experiments.
+6. As required by AFL++, we need to do some setting before running it.
+
+   ```shell
+   echo core | sudo tee /proc/sys/kernel/core_pattern
+   echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+   ```
+
+7. Give the user `poco` permission to `/workdir`; switch to the user `poco` and [run](https://github.com/HexHive/magma/blob/v1.2/tools/captain/run.sh) Magma experiments.
 
    ```shell
    chown -R poco /workdir
