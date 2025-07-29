@@ -62,8 +62,31 @@ Note that our submission is under a Major revision, and some of the artifacts ar
   - Go (>=1.18.1), required for downloading the gllvm toolchain, including `gclang/gclang++`, and `get-bc`. You can find and download the gllvm toolchain here: [gllvm-repo](https://github.com/SRI-CSL/gllvm).
   - Docker (>= 24.0.7), required for running Magma, and recommended for building PoC-instrumented targets.
 
-
 ## 3 Getting Started Guide
+
+To facilitate reproduction, we provided a Magma fork (`magma-poco`) that integrates all PoCo experimental setups, including all seed sets and a kick-to-fire experimental configuration file. Specifically, the seed sets are located under magma-poco/targets, and their suffixes correspond to the studied techniques: ALL, OptiMin, Cmin, Cmin+, and PoCo. You can start the whole fuzzing process according to the following steps:
+
+1. Install Docker and create a non-root user within the `docker` group, which is an implicit requirement of Magma. 
+
+   ```shell
+   apt update
+   apt install -y docker.io
+   docker --version  # Verify
+   adduser poco      # Create a non-root user named 'poco'
+   usermod -aG docker poco
+   usermod -aG sudo poco
+   ```
+
+2. Suppose you are in the root directory of this artifact. Navigate to the folder containing the captainrc experimental configuration and start the experiments using Magma's run.sh script. The results will be written to /home/poco/poco-fuzzdata by default. If you are using a different non-root user, please remember to modify the configuration accordingly.
+
+   ```shell
+   cd magma-poco/tools/captain
+   ./run.sh
+   ```
+3. By default, the experimental scripts utilize all CPU cores for fuzzing. You can now let the experiments run for several hours to complete.
+
+
+## 4 Step-by-Step Instructions
 
 We use `xmllint`, one of the targets used in our paper, to exemplify how to get raw experimental data. We will assume that you are running a root user on Ubuntu:22.04 operating system in this section.
 
@@ -74,9 +97,9 @@ docker pull anon0poco/major:latest
 docker run -it --name 'poco' anon0poco/major:latest
 ```
 
-You can jump to section 3.2 using this Docker container `poco`. 
+You can jump to section 4.2 using this Docker container `poco`. 
 
-### 3.1 Preparing Environments
+### 4.1 Preparing Environments
 
 1. **Install essential dependencies**. Install essential tools and dependencies, such as `make`, `cmake`, and `python3`, using the `apt-get` command.
 
@@ -107,7 +130,7 @@ You can jump to section 3.2 using this Docker container `poco`.
    InstalledDir: /usr/local/bin
    ```
 
-### 3.2 Build PoCo 
+### 4.2 Build PoCo 
 
 1. Make a directory `workdir` to work with. You can simply switch to it using `cd /workdir` if you are using the supplied `poco` container (instantiated from the `anon0poco/major:latest` Docker image).
 
@@ -180,7 +203,7 @@ You can jump to section 3.2 using this Docker container `poco`.
    [100%] Built target tog_analysis
    ```
 
-### 3.3 Build `xmllint_poc` 
+### 4.3 Build `xmllint_poc` 
 
 1. Go back to the `workdir` and download the source code of `libxml2`, which is the project of `xmllint`. We use the [Magma](https://github.com/HexHive/magma) version of `libxml2` both in our experiments and for this demonstration ([Magma-libxml2](https://github.com/HexHive/magma/blob/v1.2/targets/libxml2/fetch.sh)). After creating `out`, you can just do `cd /workdir/libxml2` and jump to the next step if you are in `poco` container.
 
@@ -266,7 +289,7 @@ You can jump to section 3.2 using this Docker container `poco`.
    0000000000850430 B __poc_map_addr
    ```
 
-### 3.4 Construct a toggle/guard hierarchy
+### 4.4 Construct a toggle/guard hierarchy
 
 1. This step corresponds to the *Guard Hierarchy Analysis* algorithm described in our manuscript. This step relies on `opt-15`, the IR-level optimization tool provided by LLVM (see [llvm-tutor](https://github.com/banach-space/llvm-tutor)), and our toggle extract component named `libtog_analysis.so`. First, make sure you have `opt-15` installed and the `libtog_analysis.so` correctly installed by:
 
@@ -302,10 +325,10 @@ You can jump to section 3.2 using this Docker container `poco`.
    Process completed
    ```
 
-### 3.5 Select Seed Iteratively
+### 4.5 Select Seed Iteratively
 
 1. This step corresponds to the *Iterative Seed Selection* (ISS) algorithm described in our manuscript. With all the intermediate products prepared, we can now run PoCo ISS using `poff_run.py`. Please make sure you have the environ `AFLPP` set before running `poff_run.py`, or it will be unable to find `afl-cmin`. 
-   **Note that** this command is just for demonstration and will take hours to finish. To save time, users can just terminate it with Ctrl-C and **jump to Section 3.5#step-4**.
+   **Note that** this command is just for demonstration and will take hours to finish. To save time, users can just terminate it with Ctrl-C and **jump to section 4.5#step-4**.
 
     ```shell
    export AFLPP=/workdir/aflpp-410c-poco
@@ -377,7 +400,7 @@ You can jump to section 3.2 using this Docker container `poco`.
    [LOG] ============================
    ```
 
-### 3.6 Fuzzing with PoCo seeds on Magma
+### 4.6 Fuzzing with PoCo seeds on Magma
 
 In our submission, we leverage targets from Magma to evaluate how PoCo seeds perform in fuzzing. [Magma](https://github.com/HexHive/magma) is a fault-based fuzzing evaluation benchmark implemented based on Docker. Therefore, it is not possible to run Magma experiments within a Docker container.
 
@@ -432,37 +455,14 @@ In our submission, we leverage targets from Magma to evaluate how PoCo seeds per
    ./run.sh    # Provided by Magma
    ```
 
-## 4 Step-by-Step Instructions
-
-To facilitate reproduction, we provided a Magma fork (`magma-poco`) that integrates all PoCo experimental setups, including all seed sets and a kick-to-fire experimental configuration file. Specifically, the seed sets are located under magma-poco/targets, and their suffixes correspond to the studied techniques: ALL, OptiMin, Cmin, Cmin+, and PoCo. You can start the whole fuzzing process according to the following steps:
-
-1. Install Docker and create a non-root user within the `docker` group, which is an implicit requirement of Magma (same with the step-5 of Section 3.6). 
-
-   ```shell
-   apt update
-   apt install -y docker.io
-   docker --version  # Verify
-   adduser poco      # Create a non-root user named 'poco'
-   usermod -aG docker poco
-   usermod -aG sudo poco
-   ```
-
-2. Suppose you are in the root directory of this artifact. Navigate to the folder containing the captainrc experimental configuration and start the experiments using Magma's run.sh script. The results will be written to /home/poco/poco-fuzzdata by default. If you are using a different non-root user, please remember to modify the configuration accordingly.
-
-   ```shell
-   cd magma-poco/tools/captain
-   ./run.sh
-   ```
-3. By default, the experimental scripts utilize all CPU cores for fuzzing. You can now let the experiments run for several hours to complete.
-
 
 ## 5 Reusability Guide
 
 In our artifact, the **core reusable components** are the PoCo toolchain, which consists of:
 
-- **Instrumentation component**: `SanitizerCoveragePoC.so` and the modified `afl-cc` (see Section 3.2#Step-1..3 and Section 3.3);
-- **Toggle/Guard hierarchy extraction component**: `libtog_analysis.so` and `tog_analysis.sh` under `PoC/res/` (see Section 3.2#Step-4 and Section 3.4); 
-- **Iterative seed selection component**: `poff_run.sh` under `PoC/run/` (see Section 3.5)
+- **Instrumentation component**: `SanitizerCoveragePoC.so` and the modified `afl-cc` (see section 4.2#Step-1..3 and section 4.3);
+- **Toggle/Guard hierarchy extraction component**: `libtog_analysis.so` and `tog_analysis.sh` under `PoC/res/` (see section 4.2#Step-4 and section 4.4); 
+- **Iterative seed selection component**: `poff_run.sh` under `PoC/run/` (see section 4.5)
 
 Given the source code `<project-to-project>` of a project to be fuzzed and a corpus `<path-to-corpus>` of seed files, PoCo can generally be reused with the following steps: 
 
