@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 确保传入了目录参数
+# Ensure that a directory argument is provided
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <directory>"
     exit 1
@@ -10,13 +10,13 @@ DIR="$1"
 SUM=0
 COUNT=0
 
-# 遍历目录下所有编号的文件夹
+# Iterate over all numbered folders in the directory
 for folder in "$DIR"/*; do
     if [ -d "$folder" ]; then
-        # 进入该文件夹
+        # Enter the folder
         cd "$folder" || continue
 
-        # 解压 ball.tar
+        # Extract ball.tar
         if [ -f "ball.tar" ]; then
             tar -xf ball.tar
         else
@@ -25,15 +25,15 @@ for folder in "$DIR"/*; do
             continue
         fi
 
-        # 查找 findings/default/plot_data 文件
+        # Locate the findings/default/plot_data file
         PLOT_DATA="findings/default/plot_data"
         if [ -f "$PLOT_DATA" ]; then
-            # 获取最后一行
+            # Get the last line
             LAST_LINE=$(tail -n 1 "$PLOT_DATA")
-            # 提取最后一个数字（去掉逗号，只保留数值）
+            # Extract the last number (remove commas and keep only the numeric value)
             LAST_NUM=$(echo "$LAST_LINE" | awk -F '[ ,%]+' '{print $(NF)}')
 
-            # 确保是一个数字
+            # Ensure it is a number
             if [[ "$LAST_NUM" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
                 SUM=$(echo "$SUM + $LAST_NUM" | bc -l)
                 COUNT=$((COUNT + 1))
@@ -44,12 +44,12 @@ for folder in "$DIR"/*; do
             echo "Warning: $folder/$PLOT_DATA not found"
         fi
 
-        # 回到原目录
+        # Return to the original directory
         cd - > /dev/null
     fi
 done
 
-# 计算平均值
+# Calculate the average
 if [ "$COUNT" -gt 0 ]; then
     AVG=$(echo "$SUM / $COUNT" | bc -l)
     echo "Average: $AVG"

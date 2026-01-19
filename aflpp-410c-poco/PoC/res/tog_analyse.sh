@@ -1,23 +1,23 @@
 #!/bin/bash
 
-#将tog_analysis.so应用于指定文件，输出dot
+#Apply tog_analysis.so to the specified file and output a DOT file
 
-# 检查是否提供了源文件作为参数
+# Check whether a source file is provided as an argument
 if [ $# -ne 1 ]; then
   echo "Usage: $0 <source-file>"
   exit 1
 fi
 
-# 设置变量
+# Set a variable
 BC_FILE="$1"
-BASENAME=$(basename "$BC_FILE" .c) # 获取文件名（去掉后缀）
+BASENAME=$(basename "$BC_FILE" .c) # Get the file name (without the extension)
 PASS_SO="$AFLPP/PoC/res/build/libtog_analysis.so"
 
 echo "BASENAME=$BASENAME"
 echo "BC_FILE=$BC_FILE"
 echo "PASS_SO=$PASS_SO"
 
-# 3. 使用 SanitizerCoveragePoC 插桩
+# 3. Instrument using SanitizerCoveragePoC
 echo "Instrumenting IR file..."
 echo "opt-15 -load-pass-plugin $PASS_SO --passes="tog-analysis" -disable-output "$BC_FILE" "
 opt-15 -load-pass-plugin $PASS_SO --passes="tog-analysis" -disable-output "$BC_FILE" 

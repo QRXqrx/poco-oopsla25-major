@@ -118,10 +118,10 @@ def run_program(program, input_dir):
     std = False
     target_cmd = [
         cmin_path,
-        "-i", input_dir,  # 输入目录
-        "-o", output_path,  # 输出目录
-        # "-t", str(timeout),  # 超时时间
-        # "-m", str(memory),  # 内存限制
+        "-i", input_dir,  # Input directory
+        "-o", output_path,  # Output directory
+        # "-t", str(timeout),  # Timeout duration
+        # "-m", str(memory),  # Timeout duration
         "-T", thread_num,
         "-t", str(round(time_limit*1000)),
         "--", 

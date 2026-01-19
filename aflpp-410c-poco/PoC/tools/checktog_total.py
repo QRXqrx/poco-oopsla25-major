@@ -6,12 +6,12 @@ import sys
 from tqdm import tqdm
 
 def validate_poc_tog(poc_file_path, input_dir_path, exec_program_path, output_dir_path):
-    # Step 1: 读取POC文件，并找到所有形如POC_TOG_{}的字符串
+    # Step 1: Read the POC file and find all strings matching POC_TOG_{}
     with open(poc_file_path, 'r') as file:
         content = file.read()
     poc_togs = re.findall(r'POC_TOG_\d+', content)
 
-    # 初始化集合
+    # Initialize sets
     set_ok = set()
     set_crash = set()
     set_tle = set()
@@ -22,42 +22,42 @@ def validate_poc_tog(poc_file_path, input_dir_path, exec_program_path, output_di
     crash_file = set()
     exec_command_file = list()
 
-    # Step 2: 枚举每个POC_TOG_{}
+    # Step 2: Enumerate each POC_TOG_{}
     for poc_tog in tqdm(poc_togs, desc="Processing POC_TOGs"):
-        #记录tog是否crash或者tle，以及是否输出结果正确
+        #Track whether the TOG causes a crash or TLE, and whether the output is correct
         poc_valid = True
         poc_right = True
 
-        # 二重枚举每个输入集路径下的输入文件
+        # Nested loop over each input file in the input directory
         for input_file in tqdm(os.listdir(input_dir_path), desc=f"Testing {poc_tog}", leave=False):
             input_file_path = os.path.join(input_dir_path, input_file)
             #print('now we are going to run {0} {1}'.format(exec_program_path,input_file_path))
-            # 构建命令行参数，执行程序
+            # Construct the command line and execute the program
             process = subprocess.Popen([exec_program_path, input_file_path],
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE)
 
             try:
-                #选择的都是小数据，10s基本上就是出现了不合理的插桩逻辑
+                #The selected inputs are small; 10s timeout is sufficient to detect unreasonable instrumentation
                 result_without_tog = process.communicate(timeout=10)
             except Exception as e:
-                #理论上不可能的情况：没有设置任何tog的情况下出现错误
+                #Theoretically impossible: error occurs without any TOG set
                 #print(f'fatal error:impossible stuation : crash in {input_file_path}')
                 #sys.exit(1)
                 #let's just ignore first
                 crash_file.add(input_file_path)
                 continue
 
-            # 检查是否发生Segmentation fault
+            # Check for Segmentation fault or non-zero return code
             if process.returncode != 0:
-                #理论上不可能的情况：没有设置任何tog的情况下出现错误
+                #Theoretically impossible: error occurs without any TOG set
                 #print(f'fatal error:impossible stuation : crash in {input_file_path}')
                 #sys.exit(1)
                 #let's just ignore first
                 crash_file.add(input_file_path)
                 continue
 
-            #将该TOG设置为1
+            #Set the current TOG to 1
             tog_env[poc_tog] = '1'
 
             process = subprocess.Popen([exec_program_path, input_file_path],
@@ -65,7 +65,7 @@ def validate_poc_tog(poc_file_path, input_dir_path, exec_program_path, output_di
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE)
             try:
-                #选择的都是小数据，10s基本上就是出现了不合理的插桩逻辑
+                #10s timeout to catch unreasonable instrumentation behavior
                 result_with_tog = process.communicate(timeout=10)
             except Exception as e:
                 process.kill()
@@ -74,7 +74,7 @@ def validate_poc_tog(poc_file_path, input_dir_path, exec_program_path, output_di
                 exec_command_file.append(f'tle: {poc_tog}=1 {exec_program_path} {input_file_path}')
                 # break
 
-            # 检查是否发生Segmentation fault
+            # Check for Segmentation fault or non-zero return code
             if process.returncode != 0:
                 set_crash.add(poc_tog)
                 poc_valid=False
@@ -101,7 +101,7 @@ def validate_poc_tog(poc_file_path, input_dir_path, exec_program_path, output_di
         #print(f'tog_env:{tog_env}')
 
 
-    # Step 3: 输出集合到指定路径
+    # Step 3: Output the sets to the specified directory
     with open(os.path.join(output_dir_path, 'ok.txt'), 'w') as ok_file:
         for poc in set_ok:
             ok_file.write(f"export {poc}=1\n")
@@ -131,19 +131,19 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # 检查POC文件路径是否存在
+    # Check if the POC file path exists
     if not os.path.isfile(args.poc_file_path):
         raise FileNotFoundError(f"POC文件路径不存在: {args.poc_file_path}")
 
-    # 检查输入目录路径是否存在
+    # Check if the input directory exists
     if not os.path.isdir(args.input_dir_path):
         raise NotADirectoryError(f"输入目录路径不存在: {args.input_dir_path}")
 
-    # 检查可执行程序路径是否存在且为可执行文件
+    # Check if the executable program exists and is executable
     if not os.path.isfile(args.exec_program_path) or not os.access(args.exec_program_path, os.X_OK):
         raise FileNotFoundError(f"可执行程序路径不存在或不可执行: {args.exec_program_path}")
 
-    # 检查输出目录路径是否存在，若不存在则创建
+    # Check if the output directory exists; create it if not
     if not os.path.exists(args.output_dir_path):
         os.makedirs(args.output_dir_path)
 

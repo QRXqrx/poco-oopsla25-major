@@ -4,20 +4,20 @@
 #include <unistd.h>
 
 int main() {
-    pid_t pid = fork(); // 创建子进程
+    pid_t pid = fork(); // Create a child process
 
     if (pid < 0) {
         perror("Fork failed");
         exit(1);
     } else if (pid == 0) {
-        // 子进程，执行退出操作
-        exit(1); // 模拟正常退出，返回值为 1
+        // Child process: perform exit operation
+        exit(1); // Simulate normal exit with return code 1
     } else {
-        // 父进程，等待子进程结束
+        // Parent process: wait for the child process to finish
         int status;
         waitpid(pid, &status, 0);
 
-        // 打印退出码
+        // Print the exit code
         if (WIFSIGNALED(status)) {
             printf("The child process was terminated by a signal.\n");
         } else {

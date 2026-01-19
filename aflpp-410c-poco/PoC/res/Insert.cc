@@ -29,18 +29,18 @@ void Insert::insert_in_br(llvm::Module &M) {
     IRBuilder<> Builder(Context);
 
     
-    // 创建null指针
+    // Create a null pointer
     ConstantPointerNull *NullPtr =ConstantPointerNull::get(PointerType::getUnqual(Type::getInt8Ty(Context)));
     
-    // 插入调用getenv的指令
+    // Insert an instruction to call getenv
     Function *GetEnvFunc = M.getFunction("getenv");
     if (!GetEnvFunc) {
-        // 声明getenv函数
+        // Declare the getenv function
         FunctionType *GetEnvType = FunctionType::get(PointerType::getUnqual(Type::getInt8Ty(Context)), {PointerType::getUnqual(Type::getInt8Ty(Context))}, false);
         GetEnvFunc = Function::Create(GetEnvType, Function::ExternalLinkage, "getenv", &M);
     }
     
-    //初始化命名字符串
+    //Initialize a named string
     std::string name="TOGGLE_";
     std::string t_name=".str.env";
     
@@ -52,23 +52,23 @@ void Insert::insert_in_br(llvm::Module &M) {
                 if(!Br->isConditional())
                    continue;
                 ++br_cnt;
-                // 设置插入点为br指令前
+                // Set the insertion point before the br instruction
                 Builder.SetInsertPoint(Br);
 
-                // 获取分支条件
+                // Get the branch condition
                 Value *OldCond = Br->getCondition();
 
 				
                 CallInst *TryGet = Builder.CreateCall(GetEnvFunc, {Builder.CreateGlobalStringPtr((name+std::to_string(br_cnt)).c_str(), t_name+std::to_string(br_cnt), 0, &M)}, "tryget");
 
 
-                // 插入icmp指令
+                // Insert an icmp instruction
                 Value *Res = Builder.CreateICmpNE(TryGet, NullPtr, "res");
 
-                // 插入or指令
+                // Insert an or instruction
                 Value *NewCond = Builder.CreateOr(Res, OldCond, "newcond");
 
-                // 修改原有br指令的条件
+                // Modify the condition of the original br instruction
                 Br->setCondition(NewCond);
         
     		}

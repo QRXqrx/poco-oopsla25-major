@@ -106,14 +106,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return _p
 
 def count_files_in_directory(directory):
-    # 获取目录下的所有文件和文件夹
+    # Get all files and folders in the directory
     entries = os.listdir(directory)
     
-    # 过滤出非隐藏文件
+    # Filter out hidden files
     files = [entry for entry in entries if not entry.startswith(".") and os.path.isfile(os.path.join(directory, entry))]
     
-    # 返回文件数量
+    # Return the number of files
     return len(files)
+
 
 
 def single_run(exec_file: str,deq: deque,_envs: dict,use_stdin:bool) :
@@ -155,7 +156,7 @@ def pessimistic_finder(origin_set : list, new_tog_set : list,seed_dir: str, exec
     result = set()
 
 
-    # 获取 seed_dir 中的所有文件
+    # Get all files in seed_dir
     seed_files = [os.path.join(seed_dir, f) for f in os.listdir(seed_dir) if os.path.isfile(os.path.join(seed_dir, f))]
     _envs = {"POC_DEBUG" : "1", "__POC_SHM_ID": str(shmid)}
     # print(LOG,f'orgin_set : {origin_set}')
@@ -168,7 +169,7 @@ def pessimistic_finder(origin_set : list, new_tog_set : list,seed_dir: str, exec
     #     if _ not in tog_set:
     #         _envs[f'{TOG_PAT}{_}'] = "1"
 
-    #先看看crash是由哪部分产生的
+    #First, check which part caused the crash
     for _ in origin_set:
             _envs[f'{TOG_PAT}{_}'] = "1"
 
@@ -182,7 +183,7 @@ def pessimistic_finder(origin_set : list, new_tog_set : list,seed_dir: str, exec
         _envs = {"POC_DEBUG" : "1", "__POC_SHM_ID": str(shmid)}
         sorted_nodes = sorted(origin_set, key=lambda node: node_id_map[f'{TOG_PAT}{node}'], reverse=True)
     
-    #deque优化
+    #Optimize deque
     deq = build_deque(seed_files)
 
 
@@ -214,7 +215,7 @@ def pessimistic_finder(origin_set : list, new_tog_set : list,seed_dir: str, exec
 
     return result
 
-# 拓扑排序函数
+# Topological sort function
 def topological_sort(graph):
     visited = set()
     stack = []
@@ -227,25 +228,26 @@ def topological_sort(graph):
             dfs(neighbor)
         stack.append(node)
 
-    # 对每个节点进行DFS
+    # Perform DFS on each node
     for node in graph:
         if node not in visited:
             dfs(node)
     
-    # 返回栈中的元素按从栈顶到栈底的顺序即为拓扑排序
+    # Return the elements in the stack from top to bottom as the topological order
     return stack[::-1]
 
+
 def move_files_and_clear(src_dir, dest_dir):
-    # 确保源目录存在
+    # Ensure the source directory exists
     if not os.path.exists(src_dir):
-        print("src_dir don't exist")
+        print("Source directory does not exist")
         return
     
-    # 如果目标目录不存在，则创建
+    # Create the destination directory if it does not exist
     if not os.path.exists(dest_dir):
         os.makedirs(dest_dir)
     
-    # 清空目标目录
+    # Clear the destination directory
     for item in os.listdir(dest_dir):
         item_path = os.path.join(dest_dir, item)
         if os.path.isdir(item_path):
@@ -253,25 +255,27 @@ def move_files_and_clear(src_dir, dest_dir):
         else:
             os.remove(item_path)
     
-    # 移动源目录中的所有文件到目标目录
+    # Move all files from the source directory to the destination directory
     for item in os.listdir(src_dir):
         item_path = os.path.join(src_dir, item)
+        # Remove hidden files in the source directory
         if item.startswith('.') and os.path.isfile(item_path):
             os.remove(item_path)
             continue
         shutil.move(os.path.join(src_dir, item), dest_dir)
     
-    # 清空源目录
-    for item in os.listdir(src_dir):  # 可能有隐藏文件
+    # Clear the source directory (may contain hidden files)
+    for item in os.listdir(src_dir):
         item_path = os.path.join(src_dir, item)
         if os.path.isdir(item_path):
             shutil.rmtree(item_path)
         else:
             os.remove(item_path)
+
     
 
 def are_filenames_identical(dir1: str, dir2: str) -> bool:
-    """判断两个目录中的非隐藏文件名是否完全一致"""
+    """Check whether the non-hidden filenames in two directories match exactly"""
     def get_filenames(directory: str):
         return {f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)) and not f.startswith('.')}
 
@@ -315,7 +319,7 @@ def main():
     map_size = num_tog + 1
     
 
-    #计算超时时间
+    #Calculate the timeout duration
     seed_files = [os.path.join(in_dir, f) for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
     return_code,time_limit = single_run(exec_dir,build_deque(seed_files),{},std)
 
@@ -326,35 +330,35 @@ def main():
     time_limit = time_limit * 5
     print(LOG,f"the max time limit is set to {time_limit}")
 
-    # 使用 pydot 读取 DOT 数据
+    # Read DOT data using pydot
     print(LOG,f'we are parsing dot file from {graph_dir}')
     graphs = pydot.graph_from_dot_file(graph_dir)
     graph = graphs[0]
 
-    # 创建一个有向图
+    # Create a directed graph
     G = nx.DiGraph()
 
-    # 从 DOT 数据添加边到有向图
+    # Add edges from DOT data to the directed graph
     for edge in graph.get_edges():
         src = edge.get_source()
         dst = edge.get_destination()
         G.add_edge(src, dst)
 
-    # 构建字典
+    # Build an adjacency dictionary
     adjacency_dict = {}
     for node in G.nodes():
         # some corner case 
         adjacency_dict[node] = list(G.successors(node))
 
-    # 执行拓扑排序
+    # Perform topological sort
     topo_sorted_nodes = topological_sort(adjacency_dict)
 
-    # 分配 ID
+    # Assign IDs to nodes
     node_id_map = {node: i for i, node in enumerate(topo_sorted_nodes)}
 
-    # 输出结果
-    # print("拓扑排序结果:", topo_sorted_nodes)
-    # print("节点ID分配:", node_id_map)
+    # output
+    # print("Topological sort result:", topo_sorted_nodes)
+    # print("Node ID assignment:", node_id_map)
 
     # exit(0)
 
@@ -385,10 +389,10 @@ def main():
     # with open("./ban_tog", 'r') as file:
     #     content = file.read()
     
-    # 使用正则表达式匹配所有数字
+    # Match all numbers using regular expressions
     # numbers = re.findall(r'\d+', content)
     
-    # 将匹配到的数字添加到集合中
+    # Add the matched numbers to a set
     # for number in numbers:
     #     ban_tog_set.add(int(number))
 
@@ -409,10 +413,10 @@ def main():
         print(LOG, f"round : {round}")
         target_cmd = [
             cmin_path,
-            "-i", in_dir,  # 输入目录
-            "-o", output_path,  # 输出目录
-            # "-t", str(timeout),  # 超时时间
-            # "-m", str(memory),  # 内存限制
+            "-i", in_dir,  # Input directory
+            "-o", output_path,  # Output directory
+            # "-t", str(timeout),  # Timeout duration
+            # "-m", str(memory),  # Memory limit
             "-T", thread_num,
             "-t", str(2000),
             "--", 
@@ -430,7 +434,7 @@ def main():
                     mapsize=map_size, be_quiet=quiet)
 
         if result.returncode != 0 :
-            #出现segment fault或者这轮打开的tog导致了cmin的结果只有一个文件
+            #A segmentation fault occurred, or enabling this TOG resulted in cmin producing only a single file
             print(f"In this round, some seeds triggered crashes or timeouts .\n" 
                   f"We're going to identify the toggle that caused the issue and ensure it's never activated again.")
             
@@ -450,17 +454,17 @@ def main():
         if last_output_path != "" and are_filenames_identical(output_path,last_output_path) :
             for item in os.listdir(output_path) :
                 print(item+'\n')
-            #这轮打开的tog导致了cmin的结果只有一个文件
+            #Enabling this TOG in this round caused cmin to produce only a single file
             print(f"In this round, the output of cmin results in only one file .\n" 
                   f"We're going to identify the toggle that caused the issue and ensure it's never activated again.")
             
             move_files_and_clear(output_path,tmp_path)
             target_cmd = [
                 cmin_path,
-                "-i", tmp_path,  # 输入目录
-                "-o", output_path,  # 输出目录
-                # "-t", str(timeout),  # 超时时间
-                # "-m", str(memory),  # 内存限制
+                "-i", tmp_path,  # Input directory
+                "-o", output_path,  # Output directory
+                # "-t", str(timeout),  # Timeout duration
+                # "-m", str(memory),  # Memory limit
                 "-T", thread_num,
                 "-t", str(2000),
                 "--", 
@@ -495,7 +499,7 @@ def main():
                     # if out_node[:7] != "POC_TOG" :
                     #     if len(adjacency_dict[out_node]) > 1 :
                     #         log("out_node is NONE_TOG_BB but has tow branch , ")
-                    # number = int(out_node.split('_')[-1])  # 取最后一个部分并转换为整数
+                    # number = int(out_node.split('_')[-1])  # Take the last part and convert it to an integer
                     # if number not in open_tog_set:
                     #     open_tog_set.add(number)
                     #     new_tog_set.add(number)

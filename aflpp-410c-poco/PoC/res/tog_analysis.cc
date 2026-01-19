@@ -27,35 +27,35 @@ using namespace llvm;
 
 void tog_analysis::start_analysis(llvm::Function &F) {
     
-    // 声明类似于 std::map<std::string, std::vector<std::string>> 的结构
+    // Declare a structure similar to std::map<std::string, std::vector<std::string>>
     std::unordered_map<std::string,std::unordered_set<std::string>> table_yes, table_no, table_go;
 
-    // 声明返回的 SmallVector
+    // Declare the returned SmallVector
     s_yes.reset(new LLVM_PSS);
     s_no.reset(new LLVM_PSS);
     s_go.reset(new LLVM_PSS);
 
-    // 用于抓BB的label
+    // A label used to capture basic blocks (BBs)
     std::string block_address;
     raw_string_ostream string_stream(block_address);
     
 
-    // 枚举函数中的每个基本块 -> @PoC: Find the toggles that have been instrumented in the target.
+    // Enumerate each basic block in the function -> @PoC: Find the toggles that have been instrumented in the target.
     for (auto &BB : F) {
         std::string poc_tog_value;
 
-        // 枚举基本块中的每条指令
+        // Enumerate each instruction in the basic block
         for (auto &I : BB) {
-            // 检查指令是否是 call 指令
+            // Check whether the instruction is a call instruction
             if (auto *Call = dyn_cast<CallInst>(&I)) {
-                // 检查调用的函数是否是 getenv
+                // Check whether the called function is getenv
                 if (Function *Callee = Call->getCalledFunction()) {
                     if (Callee->getName() == "getenv") {
-                        // 获取传递给 getenv 的参数
+                        // Get the argument passed to getenv
                         if (auto *Arg = dyn_cast<GlobalVariable>(Call->getArgOperand(0))) {
                             std::string ArgName = Arg->getName().str();
 
-                            // 检查参数是否形如 "POC_TOG_{数字}"
+                            // Check whether the argument matches the pattern POC_TOG_{number}
                             if (ArgName.find("POC_TOG_") == 0 && ArgName.length() > 8) {
                                 if(!poc_tog_value.empty()){
                                     std::cerr<<"error:one BB have more than one tog"<<'\n';
@@ -70,12 +70,12 @@ void tog_analysis::start_analysis(llvm::Function &F) {
             }
         }
 
-        //获取bb的tag
+        //Get the tag of the basic block (BB)
         BB.printAsOperand(string_stream, false);
         std::string bb_name = string_stream.str();
         block_address.clear();
 
-        // 如果找到了 POC_TOG_{数字}，处理 br 指令
+        // If POC_TOG_{number} is found, handle the br instruction
         if (poc_tog_value.empty()) {
             std::string strtp = "NONE_TOG_BB_"+bb_name.substr(1);
 
@@ -104,7 +104,7 @@ void tog_analysis::start_analysis(llvm::Function &F) {
                 // std::cout<<"right!"<<'\n';
 
 
-                // 获取条件跳转的 t 和 f 标签
+                // Get the true and false labels of the conditional branch
                 BasicBlock *GoBB = Br->getSuccessor(0);
                 GoBB->printAsOperand(string_stream, false);
                 std::string GoBB_name = string_stream.str();
@@ -114,7 +114,7 @@ void tog_analysis::start_analysis(llvm::Function &F) {
                 table_go[GoBB_name].insert(poc_tog_value);
                 
             } else {
-                 // 获取条件跳转的 t 和 f 标签
+                 // Get the true and false labels of the conditional branch
                 BasicBlock *TrueBB = Br->getSuccessor(0);
                 BasicBlock *FalseBB = Br->getSuccessor(1);
                 TrueBB->printAsOperand(string_stream, false);
@@ -133,30 +133,30 @@ void tog_analysis::start_analysis(llvm::Function &F) {
                 // string_stream.flush();
 
                 // std::cout<<FalseBB_name+'\n';
-                // 添加 t - POC_TOG_{数字} 到 table_yes
+                // Add T - POC_TOG_{number} to table_yes
                 table_yes[TrueBB_name].insert(poc_tog_value);
-                // 添加 f - POC_TOG_{数字} 到 table_no
+                // Add T - POC_TOG_{number} to table_no
                 table_no[FalseBB_name].insert(poc_tog_value);
             }
         }
     }
 
-     // 枚举函数中的每个基本块
+     // Enumerate each basic block in the function
     for (auto &BB : F) {
         std::string poc_tog_value;
 
-        // 枚举基本块中的每条指令
+        // Enumerate each instruction in the basic block
         for (auto &I : BB) {
-            // 检查指令是否是 call 指令
+            // Check whether the instruction is a call instruction
             if (auto *Call = dyn_cast<CallInst>(&I)) {
-                // 检查调用的函数是否是 getenv
+                // Check whether the called function is getenv
                 if (Function *Callee = Call->getCalledFunction()) {
                     if (Callee->getName() == "getenv") {
-                        // 获取传递给 getenv 的参数
+                        // Get the argument passed to getenv
                         if (auto *Arg = dyn_cast<GlobalVariable>(Call->getArgOperand(0))) {
                             std::string ArgName = Arg->getName().str();
 
-                            // 检查参数是否形如 "POC_TOG_{数字}"
+                            // Check whether the argument matches the pattern "POC_TOG_{number}"
                             if (ArgName.find("POC_TOG_") == 0 && ArgName.length() > 8) {
                                 if(!poc_tog_value.empty()){
                                     std::cerr<<"error:one BB have more than one tog"<<'\n';
@@ -171,12 +171,12 @@ void tog_analysis::start_analysis(llvm::Function &F) {
             }
         }
 
-        //获取bb的tag
+        //Get the tag of the basic block (BB)
         BB.printAsOperand(string_stream, false);
         std::string bb_name = string_stream.str();
         block_address.clear();
 
-        // 如果找到了 POC_TOG_{数字}，处理 br 指令
+        // If POC_TOG_{number} is found, handle the br instruction
         if (poc_tog_value.empty()) {
             std::string strtp = "NONE_TOG_BB_"+bb_name.substr(1);
 
@@ -224,16 +224,16 @@ void tog_analysis::start_analysis(llvm::Function &F) {
 
 PreservedAnalyses tog_analysis::run(llvm::Module & M,
                               llvm::ModuleAnalysisManager &) {
-    // 获取环境变量 TOG_ANALYSIS_PATH 的值
+    // Get the value of the environment variable TOG_ANALYSIS_PATH
     const char* pathEnv = std::getenv("TOG_ANALYSIS_PATH");
 
     std::string directory;
 
     if (pathEnv) {
-        // 如果环境变量存在，使用它作为目录
+        // If the environment variable exists, use it as the directory
         directory = pathEnv;
     } else {
-        // 如果环境变量不存在，使用 getcwd 获取当前目录
+        // If the environment variable does not exist, use getcwd to get the current directory
         char cwd[PATH_MAX];
         if (getcwd(cwd, sizeof(cwd)) != nullptr) {
             directory = cwd;
@@ -243,20 +243,20 @@ PreservedAnalyses tog_analysis::run(llvm::Module & M,
         }
     }
 
-    // 生成文件的完整路径
+    // Generate the full path of the file
     std::string filePath = directory + "/tog_analysis_edge";
 
-    // 打开文件，std::ofstream::trunc 模式会替换已存在的文件
+    // Open the file; std::ofstream::trunc mode will overwrite the existing file
     std::ofstream file(filePath, std::ios::out | std::ios::trunc);
     if (!file.is_open()) {
         std::cerr << "Failed to open or create the file: " << filePath << std::endl;
         return llvm::PreservedAnalyses::all();
     }
 
-    // 关闭文件，之后我们将以追加的方式打开它
+    // Close the file, and then reopen it in append mode
     file.close();
 
-    // 再次打开文件，这次是以追加模式打开
+    // Reopen the file, this time in append mode
     file.open(filePath, std::ios::out | std::ios::app);
     if (!file.is_open()) {
         std::cerr << "Failed to open the file for appending: " << filePath << std::endl;
@@ -295,7 +295,7 @@ PreservedAnalyses tog_analysis::run(llvm::Module & M,
         s_go.reset();
     }
 
-    //为顺序结构BB添加统一节点，名字起做NONE_TOG_BB，圆形节点，虚线轮廓，连接的边也是虚线
+    //Add a unified node for sequential basic blocks (BBs), named NONE_TOG_BB, as a circular node with a dashed outline, and connect it with dashed edges
 
     // for(auto & name : *normal_node){
     //     file << '\t' << name << R"( [shape="ellipse", style="dashed", label=")" << name.substr(0,11) << "\"];\n";

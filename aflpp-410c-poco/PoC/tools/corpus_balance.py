@@ -7,20 +7,20 @@ def copy_random_files(source_dir, output_dir, num_files):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-    # 获取源目录中所有非隐藏文件
+    # Get all non-hidden files in the source directory
     all_files = [f for f in os.listdir(source_dir) 
                  if os.path.isfile(os.path.join(source_dir, f)) and not f.startswith('.')]
     
-    # 获取输出目录已有的文件
+    # Get files already existing in the output directory
     existing_files = set(os.listdir(output_dir))
     
-    # 过滤出输出目录中不存在的文件
+    # Filter out files that already exist in the output directory
     available_files = [f for f in all_files if f not in existing_files]
     
-    # 随机选择 num_files 个文件
+    # Randomly select num_files files
     selected_files = random.sample(available_files, min(num_files, len(available_files)))
     
-    # 复制文件
+    # Copy the selected files
     for file in selected_files:
         shutil.copy(os.path.join(source_dir, file), os.path.join(output_dir, file))
     

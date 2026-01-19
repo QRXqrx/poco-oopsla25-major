@@ -1,34 +1,34 @@
 #!/bin/bash
 
-# 检查是否提供了目录参数
+# Check if a directory argument is provided
 if [ -z "$1" ]; then
   echo "Usage: $0 <directory>"
   exit 1
 fi
 
-# 获取指定的目录
+# Get the specified directory
 DIR="$1"
 
-# 检查目录是否存在
+# Check if the directory exists
 if [ ! -d "$DIR" ]; then
   echo "Error: Directory $DIR does not exist."
   exit 1
 fi
 
-# 遍历指定目录下的每个一级子目录
+# Iterate over each first-level subdirectory in the specified directory
 for subdir in "$DIR"/*; do
   if [ -d "$subdir" ]; then
     echo "Processing $subdir"
-    # 切换到子目录
+    # Change to the subdirectory
     cd "$subdir" || continue
-    # 检查 tar 文件是否存在
+    # Check if the tar file exists
     if [ -f "ball.tar" ]; then
-      # 解压 tar 文件
+      # Extract the tar file
       tar -xvf ball.tar
     else
       echo "Warning: ball.tar not found in $subdir"
     fi
-    # 返回上一级目录
+    # Return to the previous directory
     cd - > /dev/null || exit
   fi
 done

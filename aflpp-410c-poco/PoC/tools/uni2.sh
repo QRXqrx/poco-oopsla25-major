@@ -1,30 +1,30 @@
 #!/bin/bash
 
-# 检查参数数量
+#  Check the number of arguments
 if [ "$#" -lt 2 ]; then
   echo "Usage: $0 output_dir input_dir"
   exit 1
 fi
 
-# 读取输出目录和输入目录
+# Read the output directory and input directory
 output_dir=$1
 input_dir=$2
 
-# 检查输出目录是否存在，否则创建
+# Check if the output directory exists; if not, create it
 if [ ! -d "$output_dir" ]; then
   mkdir -p "$output_dir"
 fi
 
-# 初始化一个空的文件集合
+# Initialize an empty associative array to store files
 declare -A files_set
 
-# 递归地收集所有文件到集合中
+# Recursively collect all files into the array
 while IFS= read -r -d '' file; do
   base_file=$(basename "$file")
   files_set["$base_file"]="$file"
 done < <(find "$input_dir" -type f -print0)
 
-# 将集合中的文件复制到输出目录
+# Copy all files from the array to the output directory
 for file in "${!files_set[@]}"; do
   cp "${files_set[$file]}" "$output_dir/"
 done
