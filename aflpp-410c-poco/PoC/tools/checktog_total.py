@@ -133,15 +133,15 @@ if __name__ == "__main__":
 
     # Check if the POC file path exists
     if not os.path.isfile(args.poc_file_path):
-        raise FileNotFoundError(f"POC文件路径不存在: {args.poc_file_path}")
+        raise FileNotFoundError(f"The POC file path does not exist: {args.poc_file_path}")
 
     # Check if the input directory exists
     if not os.path.isdir(args.input_dir_path):
-        raise NotADirectoryError(f"输入目录路径不存在: {args.input_dir_path}")
+        raise NotADirectoryError(f"The input directory path does not exist: {args.input_dir_path}")
 
     # Check if the executable program exists and is executable
     if not os.path.isfile(args.exec_program_path) or not os.access(args.exec_program_path, os.X_OK):
-        raise FileNotFoundError(f"可执行程序路径不存在或不可执行: {args.exec_program_path}")
+        raise FileNotFoundError(f"The executable path does not exist or is not executable: {args.exec_program_path}")
 
     # Check if the output directory exists; create it if not
     if not os.path.exists(args.output_dir_path):

@@ -105,7 +105,7 @@ def run_program(program, input_dir):
     # print(LOG,work_path)
     cmin_path = os.path.join(work_path, "afl-cmin")
     output_path = "/tmp/bug_finder"
-        # 清空目标目录
+        # Clear the target directory
     for item in os.listdir(output_path):
         item_path = os.path.join(output_path, item)
         if os.path.isdir(item_path):

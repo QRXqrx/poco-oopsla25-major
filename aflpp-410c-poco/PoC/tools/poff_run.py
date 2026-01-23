@@ -401,7 +401,7 @@ def delete_hidden_files_and_dirs(directory: str):
                 elif os.path.isdir(item_path):  # Hidden directory
                     shutil.rmtree(item_path)
             except Exception as e:
-                print(f"删除 {item_path} 失败: {e}")
+                print(f"Failed to delete {item_path}: {e}")
 
 def main():
 
