@@ -62,7 +62,7 @@ PoCo is a technique that aims to enhance modern coverage-based seed selection (C
 
 ## 3 Getting Started Guide
 
-To facilitate reproduction, we provided a Magma fork (`magma-poco`) that integrates all PoCo experimental setups, including all seed sets and a kick-to-fire experimental configuration file. Specifically, the seed sets are located under magma-poco/targets, and their suffixes correspond to the studied techniques: ALL, OptiMin, Cmin, Cmin+, and PoCo. You can start the whole fuzzing process according to the following steps:
+To facilitate reproduction, we provided a Magma fork (`magma-poco`) that integrates all PoCo experimental setups, including all seed sets and a kick-to-fire experimental configuration file. Specifically, the seed sets are located under magma-poco/targets, and their suffixes correspond to the evaluated techniques: ALL, OptiMin, Cmin, Cmin+, and PoCo. You can start the whole fuzzing process according to the following steps:
 
 1. Install Docker and create a non-root user within the `docker` group, which is an implicit requirement of Magma. 
 
@@ -425,7 +425,7 @@ In our submission, we leverage targets from Magma to evaluate how PoCo seeds per
    docker cp poco:/workdir/out/poco-xmllint .
    ```
 
-2. Pull the source code of Magma 
+2. Pull the source code of Magma. You can directly use the `magma-poco` provided in PoCo artifacts if you cannot pull source code the official Magma repo due to issues like network errors. 
 
    ```shell
    git clone https://github.com/HexHive/magma.git
