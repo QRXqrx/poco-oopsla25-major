@@ -1,18 +1,16 @@
-# Artifacts of PoCo (OOPSLA'25)
+# Artifacts of PoCo (OOPSLA'26)
 
-OOPSLA'2425 Submission: *Peeling off the Cocoon: Unveiling Suppressed Golden Seeds for Mutational Greybox Fuzzing*
+OOPSLA'26 Submission: *Peeling off the Cocoon: Unveiling Suppressed Golden Seeds for Mutational Greybox Fuzzing*
 
-PoCo is a technique that aims at enhancing modern coverage-based seed selection (CSS) techniques, such as `afl-cmin`, by gradually removing obstacle conditional statements and conducting deeper seed selection. 
+PoCo is a technique that aims to enhance modern coverage-based seed selection (CSS) techniques (such as `afl-cmin`) by gradually removing obstacle conditional statements and conducting deeper seed selection. 
 
-This repository/package contains the current version of PoCo's artifact. The artifact includes (1) the source code of the PoCo prototype, (2) part of the intermediate and final data of PoCo experiments, and (3) some key scripts for conducting experiments and data analyses. All artifacts and updates can be found at this [anonymous repository](https://anonymous.4open.science/r/poco-oopsla25-major-FB39).
-
-Note that our submission is under a Major revision, and some of the artifacts are still under construction :construction:.
+ The PoCo artifacts include (1) the source code of the PoCo prototype, (2) the PoCo fork of the Magma benchmark that integrates seed sets evaluated in PoCo experiments,  (3) part of the intermediate and final data of PoCo experiments, and (4) key scripts for conducting experiments and data analyses. 
 
 **P.S. The Name Changing History**
 
 - PoC -> Poff -> PoCo
 - All three names come from the metaphor: *Peeling off the Cocoon*.
-- All three names are used interchangeably across the artifact and all refer to the proposed technique. 
+- All three names are used interchangeably across the artifact, and all refer to the proposed technique. 
 
 ## 1 Artifact Details
 
@@ -21,15 +19,15 @@ Note that our submission is under a Major revision, and some of the artifacts ar
   - `src/afl-cc.c`: A modified AFL++ compiler wrapper supporting `SanitizerCoveragePoC.so`. 
   - `PoC/res`: Utilities for running guard/toggle hierarchy construction and analysis.
   - `PoC/tools`: Utilities for running iterative seed selection.
+- `magma-poco`: A fork of Magma implementing PoCo experiments, which contain seed sets produced by all the evaluated seed selection techniques. 
 - `data`: Raw and intermediate experimental data.
   - `captainrc-xmllint`: An example Magma configuration on the target `xmllint`.
   - `corpus/xmllint`: The universe seed corpus for `xmllint`.
   - `results`: PoCo and final fuzzing results.
   - `poco-xmllint-done`: Packed PoCo seeds for `xmllint`.
   - `xmllint-poco-raw`: Raw PoCo seeds for `xmllint`.
-- `magma-poco`: A fork of Magma integrating PoCo experiements.  
 - `scripts`: Key data processing scripts.
-  - `cp_poco_seeds.py`: The script for packing raw PoCo seeds into one folder. 
+  - `cp_poco_seeds.py`: Script for packing raw PoCo seeds into one folder. 
 
 ## 2 Hardware and Software Dependencies
 
@@ -538,13 +536,3 @@ Given the source code `<project-to-project>` of a project to be fuzzed and a cor
    ```
 
 6. Finally, design and start fuzz campaigns using PoCo seeds.
-
-## 6 Planned Improvements
-
-Our submission is under a Major Revision and has much room to improve. Here is our plan:
-
-- Further improve the documentation and tidy up the code.
-- Include data analyses and experiment helper scripts.
-- Add all experimental configurations and data visualizations.
-- Provide a fork of Magma that contains our experimental setups.
-- Archive the PoCo instrumented targets, the raw fuzz data (e.g., `xmllint_poc`), the extracted toggle/guard hierarchies, and all experimental seed corpora through Zenodo or figureshare; provide the link to the archive.
